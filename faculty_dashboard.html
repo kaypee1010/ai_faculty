@@ -568,22 +568,34 @@ async function loadQuizzes(){
   if (!j.success){ wrap.innerHTML = '<div class="banner red">'+(j.message||'Could not load quizzes.')+'</div>'; return; }
   if (!j.data.length){ wrap.innerHTML = '<p class="hint">No quizzes yet for this course.</p>'; return; }
   wrap.innerHTML = j.data.map(q => `
-    <div class="row">
-      <span class="row-id">${q.quizId}</span>
-      <div class="row-actions">
-        <button class="pill-btn ${q.status==='OPEN'?'btn-open':'btn-closed'}"
-          onclick="toggleQuizStatus('${q.quizId}', '${q.status==='OPEN'?'CLOSED':'OPEN'}')">
-          ${q.status==='OPEN' ? '● OPEN — tap to close' : '○ CLOSED — tap to open'}
-        </button>
-        <button class="pill-btn ${q.reviewStatus==='RELEASED'?'btn-released':'btn-locked'}"
-          onclick="toggleQuizReview('${q.quizId}', '${q.reviewStatus==='RELEASED'?'LOCKED':'RELEASED'}')">
-          ${q.reviewStatus==='RELEASED' ? '🔓 Review released' : '🔒 Review locked'}
-        </button>
-        <button class="pill-btn ${q.scorecardStatus==='ON'?'btn-released':'btn-locked'}"
-          onclick="toggleQuizScorecard('${q.quizId}', '${q.scorecardStatus==='ON'?'OFF':'ON'}')"
-          title="Rank/percentile vs cohort — usually worth turning on once a course has a few quizzes' history">
-          ${q.scorecardStatus==='ON' ? '📊 Scorecard on' : '📊 Scorecard off'}
-        </button>
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span class="row-id">${q.quizId}</span>
+        <div class="row-actions">
+          <button class="pill-btn ${q.status==='OPEN'?'btn-open':'btn-closed'}"
+            onclick="toggleQuizStatus('${q.quizId}', '${q.status==='OPEN'?'CLOSED':'OPEN'}')">
+            ${q.status==='OPEN' ? '● OPEN — tap to close' : '○ CLOSED — tap to open'}
+          </button>
+          <button class="pill-btn ${q.reviewStatus==='RELEASED'?'btn-released':'btn-locked'}"
+            onclick="toggleQuizReview('${q.quizId}', '${q.reviewStatus==='RELEASED'?'LOCKED':'RELEASED'}')">
+            ${q.reviewStatus==='RELEASED' ? '🔓 Review released' : '🔒 Review locked'}
+          </button>
+          <button class="pill-btn ${q.scorecardStatus==='ON'?'btn-released':'btn-locked'}"
+            onclick="toggleQuizScorecard('${q.quizId}', '${q.scorecardStatus==='ON'?'OFF':'ON'}')"
+            title="Rank/percentile vs cohort — usually worth turning on once a course has a few quizzes' history">
+            ${q.scorecardStatus==='ON' ? '📊 Scorecard on' : '📊 Scorecard off'}
+          </button>
+          <button class="pill-btn ${q.retryStatus==='ON'?'btn-released':'btn-locked'}"
+            onclick="toggleQuizRetryMode('${q.quizId}', '${q.retryStatus==='ON'?'OFF':'ON'}')"
+            title="ON lets every student retake this quiz (e.g. practice mode). OFF (default) is one attempt per student, with one-off exceptions grantable below.">
+            ${q.retryStatus==='ON' ? '🔁 Retries: whole class ON' : '🔁 One attempt per student'}
+          </button>
+        </div>
+      </div>
+      <div class="row-actions" style="align-items:center">
+        <input type="text" placeholder="Roll number" id="retryRoll_${q.quizId}" style="max-width:160px;padding:6px 10px;font-size:12.5px;">
+        <button class="pill-btn btn-open" onclick="approveRetry('${q.quizId}')">✅ Approve one retry for this roll</button>
+        <span class="row-sub" id="retryApproveStatus_${q.quizId}"></span>
       </div>
     </div>
   `).join('');
@@ -600,6 +612,23 @@ async function toggleQuizReview(quizId, newStatus){
 async function toggleQuizScorecard(quizId, newStatus){
   await api('admin_set_scorecard', {password:PIN, quiz:quizId, status:newStatus});
   loadQuizzes();
+}
+async function toggleQuizRetryMode(quizId, newStatus){
+  if (newStatus === 'ON' && !confirm(`Let every student retake ${quizId}? Turn this off again once you're done, so one-attempt-per-student resumes.`)) return;
+  await api('admin_set_retry_mode', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function approveRetry(quizId){
+  const rollEl = document.getElementById('retryRoll_'+quizId);
+  const statusEl = document.getElementById('retryApproveStatus_'+quizId);
+  const roll = rollEl.value.trim();
+  if (!roll){ statusEl.textContent = 'Enter a roll number first.'; return; }
+  statusEl.textContent = 'Approving…';
+  const res = await api('admin_approve_retry', {password:PIN, quiz:quizId, roll});
+  statusEl.textContent = res.success
+    ? `✓ ${roll} can take ${quizId} again — consumed the moment they start it.`
+    : 'Could not approve: ' + (res.message || 'unknown error');
+  if (res.success) rollEl.value = '';
 }
 /* Seeding a quiz touches the answer key (the "a" field in each question),
    so this reuses the exact seed_question_bank contract from seed_tool.html
