@@ -336,6 +336,19 @@ function genSessionId(){
   return 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 }
 
+// Per-question display shuffle: neutralizes any answer-key pattern in the
+// underlying question bank (e.g. correct option landing on the same letter
+// too often). Grading stays keyed to the canonical index the server sent —
+// only the on-screen ORDER of options changes, once per question per sitting.
+function shuffledIndices(n){
+  const arr = Array.from({length:n}, (_,i)=>i);
+  for (let i = arr.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
 async function apiGet(action, params){
   const qs = new URLSearchParams({action, ...params});
   const r = await fetch(`${API_URL}?${qs.toString()}`);
@@ -430,6 +443,7 @@ async function beginQuiz(){
     }
     STATE.token = res.data.token;
     STATE.questions = res.data.questions;
+    STATE.questions.forEach(q => { q._displayOrder = shuffledIndices(q.opts.length); });
     STATE.currentIndex = 0;
     STATE.quizStartMs = Date.now();
     STATE.remainingMs = DURATION_MINUTES*60*1000 + 5*60*1000; // server grace baked into expiresAt; local timer mirrors duration
@@ -577,7 +591,9 @@ function renderQuestion(){
   document.getElementById('qText').textContent = q.q;
   const optsWrap = document.getElementById('optsWrap');
   optsWrap.innerHTML = '';
-  q.opts.forEach((opt, idx)=>{
+  const displayOrder = q._displayOrder || q.opts.map((_,i)=>i);
+  displayOrder.forEach(idx=>{
+    const opt = q.opts[idx];
     const btn = document.createElement('button');
     btn.className = 'opt'; btn.type = 'button'; btn.textContent = opt;
     if (STATE.answers[q.id] === idx) btn.classList.add('selected');
@@ -603,8 +619,9 @@ function selectAnswer(qid, idx){
 }
 function renderQuestionOptionsOnly(){
   const q = STATE.questions[STATE.currentIndex];
-  document.querySelectorAll('#optsWrap .opt').forEach((btn,idx)=>{
-    btn.classList.toggle('selected', STATE.answers[q.id] === idx);
+  const displayOrder = q._displayOrder || q.opts.map((_,i)=>i);
+  document.querySelectorAll('#optsWrap .opt').forEach((btn,domIdx)=>{
+    btn.classList.toggle('selected', STATE.answers[q.id] === displayOrder[domIdx]);
   });
 }
 document.querySelectorAll('.cpill').forEach(p=>{
