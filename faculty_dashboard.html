@@ -51,6 +51,16 @@
   .banner.red{background:var(--red-pale); color:var(--red);}
   .banner.green{background:var(--green-pale); color:var(--green);}
 
+  .seed-details{margin-top:18px; border-top:1px solid var(--border); padding-top:12px;}
+  .seed-details summary{cursor:pointer; list-style:none; font-family:'DM Sans',sans-serif;
+    font-weight:700; font-size:14px; color:var(--maroon-dark); padding:6px 0;
+    display:flex; align-items:center; gap:8px; user-select:none;}
+  .seed-details summary::-webkit-details-marker{display:none;}
+  .seed-details summary::before{content:'▸'; font-size:11px; display:inline-block;
+    transition:transform .15s ease;}
+  .seed-details[open] summary::before{transform:rotate(90deg);}
+  .seed-details .seed-body{padding-top:12px;}
+
   .role-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:16px;}
   @media(max-width:640px){ .role-grid{grid-template-columns:1fr;} }
   .role-card{ border:1.5px solid var(--border-strong); border-radius:12px; padding:20px; text-align:left; background:#fff; cursor:pointer; }
@@ -521,30 +531,34 @@ async function renderQuizTile(){
       sitting for a quiz is done.
     </div>
     <div id="quizList"></div>
-    <h3 style="font-size:15px;margin-top:18px;">Seed a new quiz</h3>
-    <p class="hint">Build the quiz HTML and the questions with the ai-faculty-quiz-generator
-      skill in a Claude chat first (it needs your judgment — subject, syllabus material,
-      difficulty — a form can't do that part). Once it hands you back the Question Bank
-      Seed Payload (Step 6 of that skill's output), paste it below. One click seeds the
-      question bank on this course's backend <i>and</i> adds the Quiz_ID to this dashboard
-      — replacing the separate seed_tool.html + manual Config-tab step.
-      You still upload the generated quiz.html to kpsingh.in yourself, same as before.</p>
-    <label class="field-label">Quiz_ID</label>
-    <input type="text" id="seedQuizId" placeholder="e.g. MATLAB-LAB6">
-    <label class="field-label">Max Marks Mode</label>
-    <select id="seedMaxMarksMode">
-      <option value="flat">flat (every question worth 1 mark)</option>
-      <option value="weighted">weighted (easy=1, medium=2, hard=3 marks)</option>
-    </select>
-    <label class="field-label">Draw size (optional — leave blank to serve the whole pool every time)</label>
-    <input type="text" id="seedDrawSize" placeholder="e.g. 20 — only if the pool is bigger than what each student sees">
-    <label class="field-label">Questions (the JSON array from the skill's Step 6 output)</label>
-    <textarea id="seedQuestions" style="width:100%;min-height:180px;font-family:'Inconsolata',monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--border-strong);border-radius:9px;" placeholder='[
+    <details class="seed-details" id="seedPanel">
+      <summary>Seed a new quiz</summary>
+      <div class="seed-body">
+        <p class="hint">Build the quiz HTML and the questions with the ai-faculty-quiz-generator
+          skill in a Claude chat first (it needs your judgment — subject, syllabus material,
+          difficulty — a form can't do that part). Once it hands you back the Question Bank
+          Seed Payload (Step 6 of that skill's output), paste it below. One click seeds the
+          question bank on this course's backend <i>and</i> adds the Quiz_ID to this dashboard
+          — replacing the separate seed_tool.html + manual Config-tab step.
+          You still upload the generated quiz.html to kpsingh.in yourself, same as before.</p>
+        <label class="field-label">Quiz_ID</label>
+        <input type="text" id="seedQuizId" placeholder="e.g. MATLAB-LAB6">
+        <label class="field-label">Max Marks Mode</label>
+        <select id="seedMaxMarksMode">
+          <option value="flat">flat (every question worth 1 mark)</option>
+          <option value="weighted">weighted (easy=1, medium=2, hard=3 marks)</option>
+        </select>
+        <label class="field-label">Draw size (optional — leave blank to serve the whole pool every time)</label>
+        <input type="text" id="seedDrawSize" placeholder="e.g. 20 — only if the pool is bigger than what each student sees">
+        <label class="field-label">Questions (the JSON array from the skill's Step 6 output)</label>
+        <textarea id="seedQuestions" style="width:100%;min-height:180px;font-family:'Inconsolata',monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--border-strong);border-radius:9px;" placeholder='[
   { "id":"Q1", "q":"...", "opts":["A","B","C","D"], "a":0, "tag":"...", "difficulty":"easy" },
   ...
 ]'></textarea>
-    <button class="btn btn-primary" style="margin-top:10px;" onclick="seedAndAddQuiz()">Seed &amp; add to dashboard</button>
-    <div id="seedQuizStatus" style="margin-top:10px;"></div>
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="seedAndAddQuiz()">Seed &amp; add to dashboard</button>
+        <div id="seedQuizStatus" style="margin-top:10px;"></div>
+      </div>
+    </details>
   </div>`;
   loadQuizzes();
 }
