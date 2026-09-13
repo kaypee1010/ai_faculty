@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Dashboard | ai_faculty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=Inconsolata:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --maroon-pale:#f3e3e2;
+    --amber:#a8620d; --amber-pale:#f3e8d4;
+    --red:#b3261e; --red-pale:#f6dedb;
+    --green:#2f6d3a; --green-pale:#e6f2e8;
+    --ink:#2a211c; --slate:#6b5f55; --border:#e4d9c8; --border-strong:#cdbea3;
+    --parchment:#faf6ec; --card:#fffdf8; --radius:12px;
+    --shadow:0 1px 2px rgba(50,30,20,.06), 0 4px 14px rgba(50,30,20,.06);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; padding-top:64px; background:var(--parchment); color:var(--ink);
+    font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.55; }
+  h1,h2,h3{font-family:'DM Serif Display',serif; font-weight:400; margin:0 0 .3em;}
+  .screen{display:none;} .screen.active{display:block;}
+  nav.nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center;
+    justify-content:space-between; padding:12px 20px; background:rgba(250,246,236,.85);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  .nav-brand{display:flex; align-items:center; gap:10px;}
+  .nav-logo{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--maroon);}
+  .nav-name{font-weight:700; font-size:14px;}
+  .nav-sub{font-family:'Inconsolata',monospace; font-size:10.5px; color:var(--slate); text-transform:uppercase; letter-spacing:.04em;}
+  .nav-cta{color:var(--maroon-dark); text-decoration:none; font-weight:600; font-size:12.5px;}
+
+  .wrap{max-width:820px; margin:0 auto; padding:26px 18px 60px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px;}
+  .card + .card{margin-top:14px;}
+  .eyebrow{font-family:'Inconsolata',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--maroon-dark); margin-bottom:6px;}
+  input[type=password], input[type=text], input[type=number], input[type=file], select{
+    width:100%; padding:11px 13px; border:1.5px solid var(--border-strong); border-radius:9px;
+    font-family:'Inconsolata',monospace; font-size:14px; margin-bottom:10px; background:#fff;
+  }
+  label.field-label{font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:6px;}
+  .btn{font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; border:none; border-radius:9px; padding:11px 18px; cursor:pointer;}
+  .btn-primary{background:var(--maroon); color:#fff;}
+  .btn-primary:hover{background:var(--maroon-dark);}
+  .btn-ghost{background:none; border:1px solid var(--border-strong); color:var(--ink); font-weight:600;}
+  .btn-link{background:none;border:none;color:var(--maroon-dark);font-weight:600;cursor:pointer;padding:0;font-size:13px;text-decoration:underline;}
+  .btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+  .banner{border-radius:9px; padding:11px 14px; font-size:13.5px; margin-bottom:14px;}
+  .banner.amber{background:var(--amber-pale); color:#6b4405;}
+  .banner.red{background:var(--red-pale); color:var(--red);}
+  .banner.green{background:var(--green-pale); color:var(--green);}
+
+  .role-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:16px;}
+  @media(max-width:640px){ .role-grid{grid-template-columns:1fr;} }
+  .role-card{ border:1.5px solid var(--border-strong); border-radius:12px; padding:20px; text-align:left; background:#fff; cursor:pointer; }
+  .role-card:hover{border-color:var(--maroon);}
+  .role-card.disabled{ cursor:default; opacity:.55; }
+  .role-card.disabled:hover{ border-color:var(--border-strong); }
+  .role-card .rname{font-family:'DM Serif Display',serif; font-size:19px;}
+  .role-card .rdesc{font-size:12.5px; color:var(--slate); margin-top:4px;}
+  .role-tag{font-family:'Inconsolata',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--amber);margin-top:8px;display:block;}
+
+  .course-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;}
+  @media(max-width:520px){ .course-grid{grid-template-columns:1fr;} }
+  .course-card{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; text-align:left; background:#fff; cursor:pointer; transition:border-color .15s ease; }
+  .course-card:hover{border-color:var(--maroon);}
+  .course-card .cname{font-weight:700; font-size:15px;}
+  .course-card .cmeta{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); margin-top:4px;}
+
+  .tile-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  @media(max-width:520px){ .tile-grid{grid-template-columns:1fr;} }
+  .tile{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; background:#fff;
+    cursor:pointer; text-align:left; font-family:'DM Sans',sans-serif; }
+  .tile.active{border-color:var(--maroon); background:var(--maroon-pale);}
+  .tile .tname{font-weight:700; font-size:14.5px;}
+  .tile .tdesc{font-size:12px; color:var(--slate); margin-top:3px;}
+
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 4px; border-bottom:1px dashed var(--border); flex-wrap:wrap; }
+  .row:last-child{border-bottom:none;}
+  .row-id{font-family:'Inconsolata',monospace; font-weight:700; font-size:14px;}
+  .row-sub{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); margin-top:2px;}
+  .row-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill-btn{ font-family:'Inconsolata',monospace; font-size:11.5px; font-weight:700; padding:6px 12px;
+    border-radius:20px; border:none; cursor:pointer; }
+  .btn-open{background:var(--maroon); color:#fff;}
+  .btn-closed{background:var(--border-strong); color:var(--ink);}
+  .btn-released{background:var(--maroon-pale); color:var(--maroon-dark); border:1.5px solid var(--maroon);}
+  .btn-locked{background:var(--border-strong); color:var(--ink);}
+  .btn-delete{background:var(--red-pale); color:var(--red);}
+  .spinner{display:inline-block; width:14px;height:14px;border:2px solid var(--border-strong); border-top-color:var(--maroon);
+    border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px; margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  table.export-table{width:100%; border-collapse:collapse; font-family:'Inconsolata',monospace; font-size:12.5px; margin-top:10px;}
+  table.export-table th, table.export-table td{border-bottom:1px solid var(--border); padding:6px 8px; text-align:left;}
+  table.export-table th{color:var(--slate); font-weight:600;}
+  .hint{font-size:12px;color:var(--slate);margin-top:4px;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <img class="nav-logo" src="KP_Singh.png" alt="K.P. Singh"/>
+    <div>
+      <div class="nav-name">K.P. Singh</div>
+      <div class="nav-sub" id="navSub">ai_faculty · Faculty Dashboard</div>
+    </div>
+  </div>
+  <a class="nav-cta" href="https://kpsingh.in" target="_blank">kpsingh.in ↗</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- SCREEN 0: role picker -->
+  <div id="roleScreen" class="screen active">
+    <div class="card">
+      <div class="eyebrow">ai_faculty</div>
+      <h1 style="font-size:24px;">Choose your role</h1>
+      <div class="role-grid">
+        <div class="role-card" onclick="goToGate()">
+          <div class="rname">Facilitator</div>
+          <div class="rdesc">Run your courses — attendance, lecture/lab material, quizzes, syllabus.</div>
+        </div>
+        <div class="role-card" onclick="goToEventCoordinator()">
+          <div class="rname">Event Coordinator</div>
+          <div class="rdesc">Open/close SGIF League events, release review, seed question banks.</div>
+        </div>
+        <div class="role-card disabled">
+          <div class="rname">Mentor</div>
+          <div class="rdesc">Attendance oversight, ML/OD/Internship approval, student guidance.</div>
+          <span class="role-tag">Designed later</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: PIN gate (Facilitator) -->
+  <div id="gateScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Facilitator</div>
+      <h1 style="font-size:24px;">Enter PIN</h1>
+      <p style="color:var(--slate);font-size:13.5px;">One PIN unlocks every course below — you won't be asked again this session.</p>
+      <input type="password" id="gatePin" placeholder="••••" autocomplete="off">
+      <button class="btn btn-primary" onclick="checkGate()">Unlock →</button>
+      <div id="gateStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: course picker -->
+  <div id="pickerScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Facilitator</div>
+      <h1 style="font-size:24px;">Pick a course</h1>
+      <p style="color:var(--slate); font-size:13.5px; margin-top:4px;">Attendance, lecture/lab material, quizzes, syllabus — all per course.</p>
+      <div class="course-grid" id="courseGrid">
+        <p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading courses…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: course dashboard (5 tiles) -->
+  <div id="courseScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToPicker()">← All courses</button>
+      <h1 id="courseTitle" style="font-size:22px; margin-top:10px;"></h1>
+      <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--slate);" id="courseMeta"></div>
+      <div class="tile-grid" id="tileGrid"></div>
+    </div>
+
+    <div id="tileBody"></div>
+  </div>
+
+  <!-- SCREEN 4: Event Coordinator (SGIF — single shared backend, own password) -->
+  <div id="eventUnlockScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Event Coordinator</div>
+      <h1 style="font-size:22px;">SGIF League</h1>
+      <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin:14px 0 6px;">Admin password</label>
+      <input type="password" id="eventPwInput" placeholder="••••••••" autocomplete="off">
+      <button class="btn btn-primary" onclick="unlockEvents()">Unlock →</button>
+      <div id="eventUnlockStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div id="eventScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Event Coordinator</div>
+      <h1 style="font-size:20px;">SGIF League — Events</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+        <h2 style="font-size:18px;">Events</h2>
+        <button class="btn-ghost btn btn-sm" onclick="loadEvents()">↻ Refresh</button>
+      </div>
+      <div class="banner amber" style="margin-top:10px;">
+        Open/close only — same password model as course quizzes, but a
+        different backend (SGIF). Events deliberately have no review-release
+        step: results are competitive and often public.
+      </div>
+      <div id="eventList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===================== SHARED ===================== */
+let COURSES = [], CURRENT = null, PIN = '';
+
+// SGIF has one fixed backend — from K.P.'s own seed tool. Edit directly if it redeploys.
+const SGIF_API_URL = 'https://script.google.com/macros/s/AKfycbzVS975A91DdDztHGIofJADerYEBDf2N9jPBjTyxO8Zr-0hH9Cv5e3-bevKdEdXny7k/exec';
+let EVENT_PASSWORD = '';
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ===================== ROLE PICKER ===================== */
+function goToGate(){
+  const saved = sessionStorage.getItem('facilitatorPin');
+  if (saved){
+    PIN = saved;
+    showScreen('pickerScreen');
+    loadCourses();
+    return;
+  }
+  document.getElementById('gatePin').value = '';
+  document.getElementById('gateStatus').innerHTML = '';
+  showScreen('gateScreen');
+}
+function goToEventCoordinator(){
+  EVENT_PASSWORD = '';
+  document.getElementById('eventPwInput').value = '';
+  document.getElementById('eventUnlockStatus').innerHTML = '';
+  showScreen('eventUnlockScreen');
+}
+function backToRoles(){ showScreen('roleScreen'); }
+
+function checkGate(){
+  const v = document.getElementById('gatePin').value.trim();
+  if (!v){ return; }
+  PIN = v;
+  sessionStorage.setItem('facilitatorPin', PIN);
+  showScreen('pickerScreen');
+  loadCourses();
+}
+
+/* ===================== FACILITATOR: COURSE PICKER ===================== */
+async function loadCourses(){
+  const grid = document.getElementById('courseGrid');
+  grid.innerHTML = '<p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading courses…</p>';
+  try {
+    const r = await fetch('courses.json');
+    COURSES = await r.json();
+  } catch(e) {
+    grid.innerHTML = '<div class="banner red">Could not load courses.json — check it exists alongside this page.</div>';
+    return;
+  }
+  if (!COURSES.length){
+    grid.innerHTML = '<p style="color:var(--slate);font-size:13px;">No courses registered yet — add one to courses.json.</p>';
+    return;
+  }
+  grid.innerHTML = COURSES.map((c, i) => `
+    <button class="course-card" onclick="selectCourse(${i})">
+      <div class="cname">${c.courseName}</div>
+      <div class="cmeta">${[c.branch, c.program, c.courseType].filter(Boolean).join(' · ')}</div>
+    </button>
+  `).join('');
+}
+
+async function selectCourse(i){
+  CURRENT = COURSES[i];
+  showScreen('courseScreen');
+  document.getElementById('courseTitle').textContent = CURRENT.courseName;
+  document.getElementById('courseMeta').textContent = [CURRENT.branch, CURRENT.program, CURRENT.sections ? ('sections: '+CURRENT.sections) : ''].filter(Boolean).join(' · ');
+  document.getElementById('tileGrid').innerHTML = '';
+  document.getElementById('tileBody').innerHTML = '<div class="card"><span class="spinner"></span>Checking course password…</div>';
+
+  // The PIN gate is a convenience: try the stored PIN against THIS course's backend.
+  // Every course is expected to share ADMIN_PASSWORD=2012 (see deployment checklist),
+  // but if a course was set up with a different password, fall back to asking for it
+  // just for that course rather than silently failing.
+  try {
+    const r = await fetch(`${CURRENT.execUrl}?action=admin_list&password=${encodeURIComponent(PIN)}`);
+    const j = await r.json();
+    if (j.success){
+      renderTiles();
+      document.getElementById('tileBody').innerHTML = '';
+      return;
+    }
+  } catch(e) { /* fall through to manual entry */ }
+
+  document.getElementById('tileBody').innerHTML = `
+    <div class="card">
+      <div class="banner amber">This course's password didn't match your PIN. Enter it once for this course — it'll be remembered for the rest of this session.</div>
+      <label class="field-label">Password for ${CURRENT.courseName}</label>
+      <input type="password" id="coursePwInput" placeholder="••••••••" autocomplete="off">
+      <button class="btn btn-primary" onclick="retryCoursePassword()">Unlock this course →</button>
+      <div id="coursePwStatus" style="margin-top:10px;"></div>
+    </div>`;
+}
+
+async function retryCoursePassword(){
+  const pw = document.getElementById('coursePwInput').value;
+  const statusEl = document.getElementById('coursePwStatus');
+  if (!pw) return;
+  statusEl.innerHTML = '<span class="spinner"></span>Checking…';
+  try {
+    const r = await fetch(`${CURRENT.execUrl}?action=admin_list&password=${encodeURIComponent(pw)}`);
+    const j = await r.json();
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">Wrong password.</div>'; return; }
+    PIN = pw; // use this course's password for the rest of this session
+    renderTiles();
+    document.getElementById('tileBody').innerHTML = '';
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not reach this course\'s backend.</div>';
+  }
+}
+
+function backToPicker(){
+  CURRENT = null;
+  document.getElementById('tileBody').innerHTML = '';
+  showScreen('pickerScreen');
+}
+
+/* ===================== TILES ===================== */
+function renderTiles(){
+  const tiles = [
+    {id:'attendance', name:'Attendance', desc:'Open/close per section · ERP export'},
+    CURRENT.courseType === 'Practical'
+      ? {id:'lab', name:'Lab Creation', desc:'Manuals, guides, scripts'}
+      : {id:'lecture', name:'Lecture Creation', desc:'Notes, presenter scripts'},
+    {id:'quiz', name:'Quiz & Assessment', desc:'Open/close · review release'},
+    {id:'syllabus', name:'Upload Syllabus', desc:'Course syllabus file'},
+  ];
+  document.getElementById('tileGrid').innerHTML = tiles.map(t =>
+    `<button class="tile" id="tile_${t.id}" onclick="openTile('${t.id}')">
+       <div class="tname">${t.name}</div><div class="tdesc">${t.desc}</div>
+     </button>`
+  ).join('');
+}
+
+function api(action, params, method, body){
+  const url = new URL(CURRENT.execUrl);
+  url.searchParams.set('action', action);
+  Object.keys(params||{}).forEach(k => url.searchParams.set(k, params[k]));
+  if (method === 'POST'){
+    return fetch(url.toString(), { method:'POST', body: JSON.stringify(Object.assign({action}, body||{})) }).then(r=>r.json());
+  }
+  return fetch(url.toString()).then(r=>r.json());
+}
+
+let ACTIVE_TILE = null;
+function openTile(id){
+  ACTIVE_TILE = id;
+  document.querySelectorAll('.tile').forEach(el => el.classList.remove('active'));
+  document.getElementById('tile_'+id).classList.add('active');
+  const body = document.getElementById('tileBody');
+  body.innerHTML = '<div class="card"><span class="spinner"></span>Loading…</div>';
+  if (id === 'attendance') renderAttendanceTile();
+  else if (id === 'lecture') renderContentTile('Lecture', 'Lecture Creation');
+  else if (id === 'lab') renderContentTile('Lab', 'Lab Creation');
+  else if (id === 'syllabus') renderContentTile('Syllabus', 'Upload Syllabus');
+  else if (id === 'quiz') renderQuizTile();
+}
+
+/* ---------- ATTENDANCE TILE ---------- */
+async function renderAttendanceTile(){
+  const sections = (CURRENT.sections || '').split(',').map(s=>s.trim()).filter(Boolean);
+  const body = document.getElementById('tileBody');
+  if (!sections.length){
+    body.innerHTML = '<div class="card banner red">No sections configured for this course in courses.json.</div>';
+    return;
+  }
+  let html = '<div class="card"><h2 style="font-size:18px;">Attendance</h2>';
+  html += '<div id="attCards"></div>';
+  html += '<h3 style="font-size:15px;margin-top:18px;">ERP export</h3>';
+  html += '<button class="btn btn-ghost btn-sm" onclick="loadErpExport()">↻ Load export</button>';
+  html += '<div id="erpExport"></div></div>';
+  body.innerHTML = html;
+
+  const cardsEl = document.getElementById('attCards');
+  cardsEl.innerHTML = sections.map(s => `
+    <div class="row" id="attRow_${s}">
+      <div>
+        <div class="row-id">Section ${s}</div>
+        <div class="row-sub" id="attSub_${s}">checking…</div>
+      </div>
+      <div class="row-actions">
+        <button class="pill-btn btn-closed" id="attBtn_${s}" onclick="toggleAttendance('${s}')">…</button>
+        <a class="btn-ghost btn btn-sm" href="attendance.html?api=${encodeURIComponent(CURRENT.execUrl)}&section=${encodeURIComponent(s)}&course=${encodeURIComponent(CURRENT.courseName)}" target="_blank">Open marking page ↗</a>
+      </div>
+    </div>
+  `).join('');
+
+  for (const s of sections) refreshAttendanceStatus(s);
+}
+async function refreshAttendanceStatus(section){
+  const j = await api('attendance_status', {section});
+  const btn = document.getElementById('attBtn_'+section);
+  const sub = document.getElementById('attSub_'+section);
+  if (!j.success){ sub.textContent = 'error: ' + j.message; return; }
+  const open = j.data.status === 'OPEN';
+  btn.className = 'pill-btn ' + (open ? 'btn-open' : 'btn-closed');
+  btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
+  sub.textContent = 'today: ' + j.data.dateKey;
+}
+async function toggleAttendance(section){
+  const cur = document.getElementById('attBtn_'+section).textContent.includes('OPEN');
+  await api('attendance_toggle', {password:PIN, section, status: cur ? 'CLOSED':'OPEN'});
+  refreshAttendanceStatus(section);
+}
+async function loadErpExport(){
+  const j = await api('attendance_report', {password:PIN});
+  const el = document.getElementById('erpExport');
+  if (!j.success){ el.innerHTML = '<div class="banner red">'+j.message+'</div>'; return; }
+  if (!j.data.length){ el.innerHTML = '<p class="hint">No attendance marked yet.</p>'; return; }
+  el.innerHTML = '<table class="export-table"><tr><th>Roll</th><th>Name</th><th>Sec</th><th>Held</th><th>Attended</th><th>%</th></tr>' +
+    j.data.map(r => `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.section}</td><td>${r.held}</td><td>${r.attended}</td><td>${r.pct}%</td></tr>`).join('') +
+    '</table><p class="hint">Copy-paste ready for your ERP script once you share its expected column order.</p>';
+}
+
+/* ---------- CONTENT TILES (Lecture / Lab / Syllabus) ----------
+   Field names below match Code-v3.1.gs's Content Library exactly
+   (inherited unchanged from Code-v2.1.gs): driveFileId, dataBase64,
+   fileName, visible (boolean TRUE/FALSE), driveUrl. Do not rename
+   these — the backend was deliberately kept byte-for-byte identical
+   to the already-working v2.1 Content Library. */
+async function renderContentTile(type, label){
+  const body = document.getElementById('tileBody');
+  body.innerHTML = `<div class="card">
+    <h2 style="font-size:18px;">${label}</h2>
+    <div id="contentList"></div>
+    <h3 style="font-size:15px;margin-top:18px;">Add new</h3>
+    <label class="field-label">Title</label>
+    <input type="text" id="contentTitleInput" placeholder="e.g. Week 6 — Decision Trees">
+    <label class="field-label">File</label>
+    <input type="file" id="contentFile">
+    <button class="btn btn-primary" onclick="uploadContent('${type}')">Upload</button>
+    <div id="uploadStatus"></div>
+  </div>`;
+  loadContentList(type);
+}
+async function loadContentList(type){
+  const j = await api('content_list', {password:PIN, type});
+  const el = document.getElementById('contentList');
+  if (!j.success){ el.innerHTML = '<div class="banner red">'+(j.message||'Could not load the list.')+'</div>'; return; }
+  if (!j.data.length){ el.innerHTML = '<p class="hint">Nothing uploaded yet.</p>'; return; }
+  el.innerHTML = j.data.map(item => `
+    <div class="row">
+      <div>
+        <div class="row-id">${item.title}</div>
+        <div class="row-sub">${item.fileName} · <a href="${item.driveUrl}" target="_blank">open in Drive ↗</a></div>
+      </div>
+      <div class="row-actions">
+        <button class="pill-btn ${item.visible?'btn-open':'btn-closed'}" onclick="toggleVisible('${item.driveFileId}', ${item.visible}, '${type}')">
+          ${item.visible ? '● Visible — tap to hide' : '○ Hidden — tap to publish'}
+        </button>
+        <button class="pill-btn btn-delete" onclick="deleteContent('${item.driveFileId}', '${type}')">🗑 Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleVisible(driveFileId, currentlyVisible, type){
+  await api('content_toggle_visible', {password:PIN, driveFileId, visible: currentlyVisible ? 'FALSE':'TRUE'});
+  loadContentList(type);
+}
+async function deleteContent(driveFileId, type){
+  if (!confirm('Delete this file? This removes it from Drive and from the list.')) return;
+  await api('content_delete', {password:PIN, driveFileId});
+  loadContentList(type);
+}
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadContent(type){
+  const title = document.getElementById('contentTitleInput').value.trim();
+  const fileInput = document.getElementById('contentFile');
+  const statusEl = document.getElementById('uploadStatus');
+  if (!fileInput.files.length){ statusEl.innerHTML = '<div class="banner red">Pick a file first.</div>'; return; }
+  const file = fileInput.files[0];
+  statusEl.innerHTML = '<span class="spinner"></span>Uploading…';
+  try {
+    const dataBase64 = await fileToBase64(file);
+    const j = await api('content_upload', {}, 'POST', {
+      password: PIN, type, title: title || file.name, fileName: file.name,
+      mimeType: file.type || 'application/octet-stream', dataBase64
+    });
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">'+(j.message||'Upload failed.')+'</div>'; return; }
+    statusEl.innerHTML = '<div class="banner green">Uploaded — remember to toggle it Visible when ready.</div>';
+    document.getElementById('contentTitleInput').value = '';
+    fileInput.value = '';
+    loadContentList(type);
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Upload failed — check the file size (keep it under ~25MB) and try again.</div>';
+  }
+}
+
+/* ---------- QUIZ & ASSESSMENT TILE ---------- */
+async function renderQuizTile(){
+  const body = document.getElementById('tileBody');
+  body.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="font-size:18px;">Quizzes</h2>
+      <button class="btn-ghost btn btn-sm" onclick="loadQuizzes()">↻ Refresh</button>
+    </div>
+    <div class="banner amber">
+      <b>OPEN</b> lets students start the quiz. <b>RELEASED</b> lets students who've
+      already submitted see their answers reviewed — keep this LOCKED until every
+      sitting for a quiz is done.
+    </div>
+    <div id="quizList"></div>
+    <h3 style="font-size:15px;margin-top:18px;">Seed a new quiz</h3>
+    <p class="hint">Build the quiz HTML and the questions with the ai-faculty-quiz-generator
+      skill in a Claude chat first (it needs your judgment — subject, syllabus material,
+      difficulty — a form can't do that part). Once it hands you back the Question Bank
+      Seed Payload (Step 6 of that skill's output), paste it below. One click seeds the
+      question bank on this course's backend <i>and</i> adds the Quiz_ID to this dashboard
+      — replacing the separate seed_tool.html + manual Config-tab step.
+      You still upload the generated quiz.html to kpsingh.in yourself, same as before.</p>
+    <label class="field-label">Quiz_ID</label>
+    <input type="text" id="seedQuizId" placeholder="e.g. MATLAB-LAB6">
+    <label class="field-label">Max Marks Mode</label>
+    <select id="seedMaxMarksMode">
+      <option value="flat">flat (every question worth 1 mark)</option>
+      <option value="weighted">weighted (easy=1, medium=2, hard=3 marks)</option>
+    </select>
+    <label class="field-label">Draw size (optional — leave blank to serve the whole pool every time)</label>
+    <input type="text" id="seedDrawSize" placeholder="e.g. 20 — only if the pool is bigger than what each student sees">
+    <label class="field-label">Questions (the JSON array from the skill's Step 6 output)</label>
+    <textarea id="seedQuestions" style="width:100%;min-height:180px;font-family:'Inconsolata',monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--border-strong);border-radius:9px;" placeholder='[
+  { "id":"Q1", "q":"...", "opts":["A","B","C","D"], "a":0, "tag":"...", "difficulty":"easy" },
+  ...
+]'></textarea>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="seedAndAddQuiz()">Seed &amp; add to dashboard</button>
+    <div id="seedQuizStatus" style="margin-top:10px;"></div>
+  </div>`;
+  loadQuizzes();
+}
+async function loadQuizzes(){
+  const j = await api('admin_list', {password:PIN});
+  const wrap = document.getElementById('quizList');
+  if (!j.success){ wrap.innerHTML = '<div class="banner red">'+(j.message||'Could not load quizzes.')+'</div>'; return; }
+  if (!j.data.length){ wrap.innerHTML = '<p class="hint">No quizzes yet for this course.</p>'; return; }
+  wrap.innerHTML = j.data.map(q => `
+    <div class="row">
+      <span class="row-id">${q.quizId}</span>
+      <div class="row-actions">
+        <button class="pill-btn ${q.status==='OPEN'?'btn-open':'btn-closed'}"
+          onclick="toggleQuizStatus('${q.quizId}', '${q.status==='OPEN'?'CLOSED':'OPEN'}')">
+          ${q.status==='OPEN' ? '● OPEN — tap to close' : '○ CLOSED — tap to open'}
+        </button>
+        <button class="pill-btn ${q.reviewStatus==='RELEASED'?'btn-released':'btn-locked'}"
+          onclick="toggleQuizReview('${q.quizId}', '${q.reviewStatus==='RELEASED'?'LOCKED':'RELEASED'}')">
+          ${q.reviewStatus==='RELEASED' ? '🔓 Review released' : '🔒 Review locked'}
+        </button>
+        <button class="pill-btn ${q.scorecardStatus==='ON'?'btn-released':'btn-locked'}"
+          onclick="toggleQuizScorecard('${q.quizId}', '${q.scorecardStatus==='ON'?'OFF':'ON'}')"
+          title="Rank/percentile vs cohort — usually worth turning on once a course has a few quizzes' history">
+          ${q.scorecardStatus==='ON' ? '📊 Scorecard on' : '📊 Scorecard off'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleQuizStatus(quizId, newStatus){
+  await api('admin_set_status', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function toggleQuizReview(quizId, newStatus){
+  if (newStatus === 'RELEASED' && !confirm(`Release answers for ${quizId} to all students who've submitted? This can't be un-shown to anyone who's already seen it.`)) return;
+  await api('admin_set_review', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function toggleQuizScorecard(quizId, newStatus){
+  await api('admin_set_scorecard', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+/* Seeding a quiz touches the answer key (the "a" field in each question),
+   so this reuses the exact seed_question_bank contract from seed_tool.html
+   — same payload shape, same admin secret, just called from here instead
+   of a separate local file. Nothing about where the answer key travels
+   changes: it's still only ever sent once, by you, behind this same
+   password gate every other admin action on this dashboard already uses. */
+async function seedAndAddQuiz(){
+  const quizId = document.getElementById('seedQuizId').value.trim();
+  const maxMarksMode = document.getElementById('seedMaxMarksMode').value;
+  const drawSizeRaw = document.getElementById('seedDrawSize').value.trim();
+  const questionsRaw = document.getElementById('seedQuestions').value.trim();
+  const statusEl = document.getElementById('seedQuizStatus');
+
+  if (!quizId || !questionsRaw){
+    statusEl.innerHTML = '<div class="banner red">Quiz_ID and the questions JSON are both required.</div>';
+    return;
+  }
+  let questions;
+  try {
+    questions = JSON.parse(questionsRaw);
+    if (!Array.isArray(questions) || questions.length === 0) throw new Error('not a non-empty array');
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not parse the questions JSON: '+e.message+' — make sure it\'s a valid JSON array, exactly as the skill emitted it.</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spinner"></span>Seeding question bank…';
+  const seedBody = { key: PIN, quizId, maxMarksMode, questions };
+  if (drawSizeRaw){
+    const n = parseInt(drawSizeRaw, 10);
+    if (!isNaN(n)) seedBody.drawSize = n;
+  }
+  const seedResult = await api('seed_question_bank', {}, 'POST', seedBody);
+  if (!seedResult.success){
+    statusEl.innerHTML = '<div class="banner red">Seeding failed: '+(seedResult.message||'unknown error')+'</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spinner"></span>Seeded '+seedResult.data.seeded+' question(s) — registering on dashboard…';
+  const addResult = await api('admin_add_quiz', {password:PIN, quiz:quizId});
+  if (!addResult.success){
+    statusEl.innerHTML = '<div class="banner amber">Seeded '+seedResult.data.seeded+' question(s), but could not auto-register the Quiz_ID ('+(addResult.message||'unknown error')+'). Add it to the Config tab\'s quiz_list by hand.</div>';
+    loadQuizzes();
+    return;
+  }
+
+  statusEl.innerHTML = '<div class="banner green">Seeded '+seedResult.data.seeded+' question(s) and added to the dashboard, left CLOSED. Upload the quiz.html the skill gave you to kpsingh.in, then toggle it OPEN below when ready.</div>';
+  document.getElementById('seedQuestions').value = '';
+  loadQuizzes();
+}
+
+/* ===================== EVENT COORDINATOR (SGIF) ===================== */
+async function unlockEvents(){
+  const pw = document.getElementById('eventPwInput').value;
+  if (!pw) return;
+  const statusEl = document.getElementById('eventUnlockStatus');
+  statusEl.innerHTML = '<span class="spinner"></span>Checking…';
+  try {
+    const r = await fetch(`${SGIF_API_URL}?action=admin_list&password=${encodeURIComponent(pw)}`);
+    const j = await r.json();
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">Wrong password.</div>'; return; }
+    EVENT_PASSWORD = pw;
+    showScreen('eventScreen');
+    renderEvents(j.data);
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not reach SGIF\'s backend.</div>';
+  }
+}
+async function loadEvents(){
+  const r = await fetch(`${SGIF_API_URL}?action=admin_list&password=${encodeURIComponent(EVENT_PASSWORD)}`);
+  const j = await r.json();
+  if (j.success) renderEvents(j.data);
+}
+function renderEvents(list){
+  const wrap = document.getElementById('eventList');
+  if (!list.length){
+    wrap.innerHTML = '<p style="color:var(--slate);font-size:13.5px;">No events registered yet.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(q => `
+    <div class="row">
+      <span class="row-id">${q.quizId}</span>
+      <div class="row-actions">
+        <button class="pill-btn ${q.status==='OPEN'?'btn-open':'btn-closed'}"
+          onclick="toggleEventStatus('${q.quizId}', '${q.status==='OPEN'?'CLOSED':'OPEN'}')">
+          ${q.status==='OPEN' ? '● OPEN — tap to close' : '○ CLOSED — tap to open'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleEventStatus(quizId, newStatus){
+  await fetch(`${SGIF_API_URL}?action=admin_set_status&password=${encodeURIComponent(EVENT_PASSWORD)}&quiz=${quizId}&status=${newStatus}`);
+  loadEvents();
+}
+</script>
+</body>
+</html>
