@@ -404,7 +404,7 @@ async function renderAttendanceTile(){
       </div>
       <div class="row-actions">
         <button class="pill-btn btn-closed" id="attBtn_${s}" onclick="toggleAttendance('${s}')">…</button>
-        <a class="btn-ghost btn btn-sm" href="attendance.html?api=${encodeURIComponent(CURRENT.execUrl)}&section=${encodeURIComponent(s)}&course=${encodeURIComponent(CURRENT.courseName)}" target="_blank">Open marking page ↗</a>
+        <a class="btn-ghost btn btn-sm" href="attendance.html?course=${encodeURIComponent(CURRENT.courseId)}&section=${encodeURIComponent(s)}" target="_blank">Open marking page ↗</a>
       </div>
     </div>
   `).join('');
