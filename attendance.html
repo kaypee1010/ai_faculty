@@ -66,21 +66,53 @@
     <div class="meta" id="courseMeta"></div>
     <div id="banner"></div>
     <input type="text" id="rollInput" placeholder="Registration / Roll Number" autocomplete="off">
-    <button class="btn btn-primary" id="markBtn" onclick="markAttendance()">📍 Mark My Attendance</button>
+    <button class="btn btn-primary" id="markBtn" onclick="markAttendance()" disabled>📍 Mark My Attendance</button>
   </div>
 </div>
 <script>
+// v2 (Sep 2026): link now carries a short courseId (e.g. "?course=intro-ai&section=A")
+// resolved against courses.json — instead of the raw, URL-encoded Apps Script /exec
+// link. This is what keeps the shareable student link short and hides the backend
+// URL. Old-style links that still pass a raw "api=" param keep working (legacy mode)
+// so any link already circulated to students does not break.
 const params = new URLSearchParams(window.location.search);
-const API_URL = params.get('api') || '';
-const SECTION = params.get('section') || '';
-const COURSE  = params.get('course') || '';
+const LEGACY_API   = params.get('api') || '';
+const SECTION      = params.get('section') || '';
+const COURSE_PARAM = params.get('course') || '';
 
-document.getElementById('courseTitle').textContent = COURSE || 'Attendance';
-document.getElementById('courseMeta').textContent = SECTION ? ('Section ' + SECTION) : '';
-document.getElementById('navSub').textContent = 'SGT University · ' + (COURSE || 'Attendance');
+let API_URL = '';
+let COURSE_LABEL = '';
 
 function banner(html, cls){
   document.getElementById('banner').innerHTML = html ? `<div class="banner ${cls}">${html}</div>` : '';
+}
+
+async function resolveCourse(){
+  // Legacy mode: an old link that still embeds the raw exec URL directly.
+  if (LEGACY_API){
+    API_URL = LEGACY_API;
+    COURSE_LABEL = COURSE_PARAM;
+    return true;
+  }
+  if (!COURSE_PARAM){
+    banner('This link is missing course info — ask your faculty for the correct link.', 'red');
+    return false;
+  }
+  try {
+    const r = await fetch('courses.json');
+    const list = await r.json();
+    const entry = list.find(c => c.courseId === COURSE_PARAM);
+    if (!entry || !entry.execUrl || entry.execUrl.indexOf('PASTE_EXEC_URL') === 0){
+      banner('This course link isn’t set up yet — ask your faculty to check courses.json.', 'red');
+      return false;
+    }
+    API_URL = entry.execUrl;
+    COURSE_LABEL = entry.courseName;
+    return true;
+  } catch(e) {
+    banner('Could not load course info. Check your connection and try again.', 'red');
+    return false;
+  }
 }
 
 async function checkStatus(){
@@ -91,13 +123,24 @@ async function checkStatus(){
     if (!j.success){ banner(j.message, 'red'); return; }
     if (j.data.status !== 'OPEN'){
       banner('Attendance is not open right now for this section.', 'amber');
-      document.getElementById('markBtn').disabled = true;
+      return;
     }
+    document.getElementById('markBtn').disabled = false;
   } catch(e) {
     banner('Could not reach the backend. Check your connection.', 'red');
   }
 }
-checkStatus();
+
+async function init(){
+  const ok = await resolveCourse();
+  document.getElementById('courseTitle').textContent = COURSE_LABEL || 'Attendance';
+  document.getElementById('courseMeta').textContent = SECTION ? ('Section ' + SECTION) : '';
+  document.getElementById('navSub').textContent = 'SGT University · ' + (COURSE_LABEL || 'Attendance');
+  if (!ok) return;
+  if (!SECTION){ banner('This link is missing section info — ask your faculty for the correct link.', 'red'); return; }
+  checkStatus();
+}
+init();
 
 function getPosition(){
   return new Promise((resolve, reject) => {
