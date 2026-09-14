@@ -106,6 +106,15 @@
   table.export-table th, table.export-table td{border-bottom:1px solid var(--border); padding:6px 8px; text-align:left;}
   table.export-table th{color:var(--slate); font-weight:600;}
   .hint{font-size:12px;color:var(--slate);margin-top:4px;}
+  .erp-sync{margin-top:18px; border-top:1px solid var(--border); padding-top:14px;}
+  .erp-sync .row-inline{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+  .erp-sync .row-inline > div{flex:1 1 140px; min-width:120px;}
+  .erp-sync .row-inline input, .erp-sync .row-inline select{margin-bottom:0;}
+  .script-box{position:relative; margin-top:12px;}
+  .script-box pre{background:#241a15; color:#f3e8d4; border-radius:9px; padding:14px 16px;
+    font-family:'Inconsolata',monospace; font-size:12px; line-height:1.55; overflow-x:auto;
+    white-space:pre; margin:0; max-height:340px; overflow-y:auto;}
+  .script-box .copy-btn{position:absolute; top:8px; right:8px;}
 </style>
 </head>
 <body>
@@ -392,8 +401,22 @@ async function renderAttendanceTile(){
   html += '<div id="attCards"></div>';
   html += '<h3 style="font-size:15px;margin-top:18px;">ERP export</h3>';
   html += '<button class="btn btn-ghost btn-sm" onclick="loadErpExport()">↻ Load export</button>';
-  html += '<div id="erpExport"></div></div>';
+  html += '<div id="erpExport"></div>';
+
+  html += '<div class="erp-sync">';
+  html += '<h3 style="font-size:15px;">Copy one day\'s attendance to the ERP portal</h3>';
+  html += '<p class="hint">Pick a section and a date, generate the script below, then paste it into the browser console on that class\'s ERP attendance page — it ticks the present students\' checkboxes only, it never clicks Submit/Save for you.</p>';
+  html += '<div class="row-inline">';
+  html += '<div><label class="field-label">Section</label><select id="erpSection">' +
+          sections.map(s => `<option value="${s}">${s}</option>`).join('') + '</select></div>';
+  html += '<div><label class="field-label">Date</label><input type="date" id="erpDate"></div>';
+  html += '<div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="generateErpScript()">Generate script</button></div>';
+  html += '</div>';
+  html += '<p class="hint" id="erpDatesHint">Loading recorded session dates…</p>';
+  html += '<div id="erpScriptOut"></div>';
+  html += '</div></div>';
   body.innerHTML = html;
+  loadErpDates();
 
   const cardsEl = document.getElementById('attCards');
   cardsEl.innerHTML = sections.map(s => `
@@ -434,6 +457,89 @@ async function loadErpExport(){
   el.innerHTML = '<table class="export-table"><tr><th>Roll</th><th>Name</th><th>Sec</th><th>Held</th><th>Attended</th><th>%</th></tr>' +
     j.data.map(r => `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.section}</td><td>${r.held}</td><td>${r.attended}</td><td>${r.pct}%</td></tr>`).join('') +
     '</table><p class="hint">Copy-paste ready for your ERP script once you share its expected column order.</p>';
+}
+
+/* ---------- ERP per-day sync script (Sep 2026) ----------
+   Converts an <input type=date> value ("2026-08-26") to the same 'd-MMM'
+   label the backend stores as its Attendance date-column header ("26-Aug") —
+   Utilities.formatDate(date, tz, 'd-MMM') on the Apps Script side. Day has
+   no leading zero, month is a 3-letter abbreviation. No year in either —
+   attendance data is scoped to one semester, so this is unambiguous. */
+const MONTH_ABBR_ = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function isoToDMmm(iso){
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d}-${MONTH_ABBR_[m-1]}`;
+}
+
+async function loadErpDates(){
+  const hint = document.getElementById('erpDatesHint');
+  const j = await api('attendance_dates', {password:PIN});
+  if (!hint) return; // tile may have been switched away from already
+  if (!j.success){ hint.textContent = 'Could not load recorded dates: ' + j.message; return; }
+  hint.textContent = j.data.dates.length
+    ? 'Recorded sessions: ' + j.data.dates.join(', ')
+    : 'No attendance has been recorded for this course yet.';
+}
+
+async function generateErpScript(){
+  const section = document.getElementById('erpSection').value;
+  const isoDate = document.getElementById('erpDate').value;
+  const out = document.getElementById('erpScriptOut');
+  if (!isoDate){ out.innerHTML = '<div class="banner red">Pick a date first.</div>'; return; }
+  const dateLabel = isoToDMmm(isoDate);
+  out.innerHTML = '<p class="hint"><span class="spinner"></span>Looking up ' + dateLabel + '…</p>';
+
+  const j = await api('attendance_daylist', {password:PIN, section, date: dateLabel});
+  if (!j.success){ out.innerHTML = '<div class="banner red">' + j.message + '</div>'; return; }
+
+  const rolls = j.data.presentRolls;
+  const script =
+`// Auto-generated — ${CURRENT.courseName} — Section ${section} — ${j.data.date}
+// Present roll numbers: ${rolls.length} of ${j.data.totalStudents}
+// Marks checkboxes only — does NOT click Submit/Save. Review, then submit yourself.
+
+function markAttendance(presentRollNumbers) {
+  const rows = document.querySelectorAll('tr.odd, tr.even');
+  let markedCount = 0;
+  rows.forEach(tr => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length < 3) return;
+    const rollNo = cells[2].innerText.trim();
+    const checkbox = cells[0].querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      const shouldBeChecked = presentRollNumbers.includes(rollNo);
+      if (checkbox.checked !== shouldBeChecked) checkbox.click();
+      if (shouldBeChecked) markedCount++;
+    }
+  });
+  console.log(\`Marked \${markedCount} students as present. Review the checkboxes, then click Submit/Save yourself.\`);
+}
+
+const presentRollNumbers = ${JSON.stringify(rolls)};
+markAttendance(presentRollNumbers);`;
+
+  out.innerHTML = '<div class="script-box"><button class="btn btn-ghost btn-sm copy-btn" onclick="copyErpScript(this)">📋 Copy</button>' +
+    '<pre id="erpScriptText"></pre></div>' +
+    '<p class="hint">' + rolls.length + ' present, ' + (j.data.totalStudents - rolls.length) + ' absent on ' + j.data.date + ' (section ' + section + ').</p>';
+  document.getElementById('erpScriptText').textContent = script;
+}
+
+function copyErpScript(btn){
+  const text = document.getElementById('erpScriptText').textContent;
+  const done = () => { const old = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = old, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy_(text, done));
+  } else {
+    fallbackCopy_(text, done);
+  }
+}
+function fallbackCopy_(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch(e) {}
+  document.body.removeChild(ta);
 }
 
 /* ---------- CONTENT TILES (Lecture / Lab / Syllabus) ----------
