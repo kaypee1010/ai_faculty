@@ -293,36 +293,42 @@ async function loadCourses(){
   `).join('');
 }
 
-async function selectCourse(i){
+// (Sep 2026) selectCourse() used to make a live admin_list call to verify
+// the stored PIN against THIS course's backend before showing any tiles —
+// a full Apps Script round-trip (slow, and worse whenever the backend is
+// busy — see the api() note below) on every single course click, purely to
+// pre-check something that only matters if a course was set up with a
+// non-standard password (every course is meant to share ADMIN_PASSWORD=2012,
+// see the deployment checklist). Removed: tiles now render immediately.
+// If a course's password genuinely doesn't match, the mismatch surfaces
+// naturally the moment any password-gated action actually runs (ERR-401 —
+// see maybeShowPasswordPrompt(), wired into api() below), which is rare in
+// practice and no slower than before, just no longer paid on every click.
+function selectCourse(i){
   CURRENT = COURSES[i];
   showScreen('courseScreen');
   document.getElementById('courseTitle').textContent = CURRENT.courseName;
   document.getElementById('courseMeta').textContent = [CURRENT.branch, CURRENT.program, CURRENT.sections ? ('sections: '+CURRENT.sections) : ''].filter(Boolean).join(' · ');
-  document.getElementById('tileGrid').innerHTML = '';
-  document.getElementById('tileBody').innerHTML = '<div class="card"><span class="spinner"></span>Checking course password…</div>';
+  document.getElementById('tileBody').innerHTML = '';
+  renderTiles();
+}
 
-  // The PIN gate is a convenience: try the stored PIN against THIS course's backend.
-  // Every course is expected to share ADMIN_PASSWORD=2012 (see deployment checklist),
-  // but if a course was set up with a different password, fall back to asking for it
-  // just for that course rather than silently failing.
-  try {
-    const r = await fetch(`${CURRENT.execUrl}?action=admin_list&password=${encodeURIComponent(PIN)}`);
-    const j = await r.json();
-    if (j.success){
-      renderTiles();
-      document.getElementById('tileBody').innerHTML = '';
-      return;
-    }
-  } catch(e) { /* fall through to manual entry */ }
-
-  document.getElementById('tileBody').innerHTML = `
-    <div class="card">
-      <div class="banner amber">This course's password didn't match your PIN. Enter it once for this course — it'll be remembered for the rest of this session.</div>
-      <label class="field-label">Password for ${CURRENT.courseName}</label>
-      <input type="password" id="coursePwInput" placeholder="••••••••" autocomplete="off">
-      <button class="btn btn-primary" onclick="retryCoursePassword()">Unlock this course →</button>
-      <div id="coursePwStatus" style="margin-top:10px;"></div>
-    </div>`;
+// Shown inline, on top of whatever tile is open, the first time a
+// password-gated call comes back ERR-401 for the current course — instead
+// of blocking course entry upfront on a check that's almost always fine.
+function maybeShowPasswordPrompt(){
+  if (document.getElementById('pwMismatchBanner')) return; // already showing
+  const body = document.getElementById('tileBody');
+  if (!body || !CURRENT) return;
+  body.insertAdjacentHTML('afterbegin', `
+    <div class="card banner amber" id="pwMismatchBanner">
+      This course's password didn't match your PIN. Enter it once for this course.
+      <div style="margin-top:8px;">
+        <input type="password" id="coursePwInput" placeholder="Password for ${CURRENT.courseName}" autocomplete="off">
+        <button class="btn btn-primary btn-sm" onclick="retryCoursePassword()">Unlock this course →</button>
+        <div id="coursePwStatus" style="margin-top:8px;"></div>
+      </div>
+    </div>`);
 }
 
 async function retryCoursePassword(){
@@ -335,8 +341,8 @@ async function retryCoursePassword(){
     const j = await r.json();
     if (!j.success){ statusEl.innerHTML = '<div class="banner red">Wrong password.</div>'; return; }
     PIN = pw; // use this course's password for the rest of this session
-    renderTiles();
-    document.getElementById('tileBody').innerHTML = '';
+    document.getElementById('pwMismatchBanner').remove();
+    if (ACTIVE_TILE) openTile(ACTIVE_TILE); else renderTiles();
   } catch(e) {
     statusEl.innerHTML = '<div class="banner red">Could not reach this course\'s backend.</div>';
   }
@@ -396,7 +402,9 @@ async function api(action, params, method, body){
       const r = isPost
         ? await fetch(url.toString(), { method:'POST', body: JSON.stringify(Object.assign({action}, body||{})) })
         : await fetch(url.toString());
-      return await parseJsonSafe_(r);
+      const j = await parseJsonSafe_(r);
+      if (j && j.success === false && j.code === 'ERR-401') maybeShowPasswordPrompt();
+      return j;
     } catch(e){
       lastErr = e;
       if (attempt < tries) await new Promise(res => setTimeout(res, 900 * attempt));
@@ -474,10 +482,33 @@ async function refreshAttendanceStatus(section){
   btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
   sub.textContent = 'today: ' + j.data.dateKey;
 }
+// (Sep 2026) This used to await attendance_toggle, then await a SECOND,
+// separate attendance_status call just to redraw the same button — two
+// full Apps Script round-trips back to back, with no visual feedback in
+// between, which is what made a toggle feel like it had frozen. Fixed:
+// disable + show a spinner the instant it's clicked (so it never looks
+// dead), and use the status the toggle call already returns to update the
+// button immediately — one round-trip, not two. refreshAttendanceStatus()
+// still runs after, but only in the background to refresh the "today: …"
+// date label; it no longer blocks the button.
 async function toggleAttendance(section){
-  const cur = document.getElementById('attBtn_'+section).textContent.includes('OPEN');
-  await api('attendance_toggle', {password:PIN, section, status: cur ? 'CLOSED':'OPEN'});
-  refreshAttendanceStatus(section);
+  const btn = document.getElementById('attBtn_'+section);
+  const sub = document.getElementById('attSub_'+section);
+  const cur = btn.textContent.includes('OPEN');
+  const prevHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>…';
+  const j = await api('attendance_toggle', {password:PIN, section, status: cur ? 'CLOSED':'OPEN'});
+  btn.disabled = false;
+  if (!j.success){
+    btn.innerHTML = prevHtml;
+    if (sub) sub.textContent = 'error: ' + j.message;
+    return; // don't refresh — the toggle didn't actually happen (e.g. wrong password)
+  }
+  const open = j.data.status === 'OPEN';
+  btn.className = 'pill-btn ' + (open ? 'btn-open' : 'btn-closed');
+  btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
+  refreshAttendanceStatus(section); // background refresh of the date sub-label only
 }
 async function loadErpExport(){
   const j = await api('attendance_report', {password:PIN});
