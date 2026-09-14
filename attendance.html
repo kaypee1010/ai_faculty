@@ -192,13 +192,21 @@ async function init(){
 }
 init();
 
+// (Sep 2026) Used to force a fresh, high-accuracy GPS fix every time
+// (enableHighAccuracy:true, no maximumAge) — often the slowest part of the
+// whole mark, especially indoors, since high-accuracy mode can take many
+// seconds to lock on. Since v3.5 an off-campus mark is only flagged for
+// K.P.'s review, never blocked — so pinpoint accuracy no longer matters
+// enough to justify that wait. Now: low-accuracy mode (fast network/cell
+// fix) and maximumAge lets the browser instantly reuse a position it
+// already has from the last minute instead of taking a fresh reading.
 function getPosition(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation){ reject(new Error('Geolocation not supported on this device/browser.')); return; }
     navigator.geolocation.getCurrentPosition(
       pos => resolve(pos.coords),
       err => reject(new Error('Could not get your location — allow location access and try again.')),
-      { enableHighAccuracy: true, timeout: 15000 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
     );
   });
 }
@@ -219,7 +227,7 @@ async function markAttendance(){
       (n, total) => banner(`<span class="spinner"></span>Server’s busy, retrying… (${n}/${total})`, 'amber')
     );
     if (!j.success){ banner(j.message, 'red'); btn.disabled = false; return; }
-    banner(`✓ Marked present for ${j.data.date}. Attended so far: ${j.data.attendedSoFar}.`, 'green');
+    banner(`✓ Marked present for ${j.data.date}.`, 'green');
   } catch(e) {
     banner(e.message || 'Something went wrong.', 'red');
     btn.disabled = false;
