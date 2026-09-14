@@ -87,6 +87,27 @@ function banner(html, cls){
   document.getElementById('banner').innerHTML = html ? `<div class="banner ${cls}">${html}</div>` : '';
 }
 
+// Apps Script's /exec URL replies with a redirect to a googleusercontent.com
+// URL that actually carries the JSON. Real browsers follow this invisibly,
+// but some in-app browsers (WhatsApp, Instagram, etc.) don't handle that
+// redirect cleanly and hand back an HTML page instead — which breaks
+// r.json() with a cryptic "Unexpected token '<'" (the '<' is the start of
+// "<!DOCTYPE html>..."). Reading as text first lets us catch that and show
+// something a student can actually act on, instead of a raw syntax error.
+// backendCall=true adds the WhatsApp/Instagram hint, since that failure mode
+// is specific to calls that hit the Apps Script /exec URL, not courses.json.
+async function parseJsonSafe(r, backendCall){
+  const text = await r.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    const hint = backendCall
+      ? ' If you opened this link inside WhatsApp, Instagram, or a similar app, try again in Chrome or Safari directly (tap ⋮ or the share icon → "Open in browser") — that’s the most common cause of this.'
+      : '';
+    throw new Error('Got an unexpected reply from the server.' + hint);
+  }
+}
+
 async function resolveCourse(){
   // Legacy mode: an old link that still embeds the raw exec URL directly.
   if (LEGACY_API){
@@ -100,7 +121,7 @@ async function resolveCourse(){
   }
   try {
     const r = await fetch('courses.json');
-    const list = await r.json();
+    const list = await parseJsonSafe(r);
     const entry = list.find(c => c.courseId === COURSE_PARAM);
     if (!entry || !entry.execUrl || entry.execUrl.indexOf('PASTE_EXEC_URL') === 0){
       banner('This course link isn’t set up yet — ask your faculty to check courses.json.', 'red');
@@ -110,7 +131,7 @@ async function resolveCourse(){
     COURSE_LABEL = entry.courseName;
     return true;
   } catch(e) {
-    banner('Could not load course info. Check your connection and try again.', 'red');
+    banner(e.message || 'Could not load course info. Check your connection and try again.', 'red');
     return false;
   }
 }
@@ -119,7 +140,7 @@ async function checkStatus(){
   if (!API_URL || !SECTION){ banner('This link is missing course/section info — ask your faculty for the correct link.', 'red'); return; }
   try {
     const r = await fetch(`${API_URL}?action=attendance_status&section=${encodeURIComponent(SECTION)}`);
-    const j = await r.json();
+    const j = await parseJsonSafe(r, true);
     if (!j.success){ banner(j.message, 'red'); return; }
     if (j.data.status !== 'OPEN'){
       banner('Attendance is not open right now for this section.', 'amber');
@@ -127,7 +148,7 @@ async function checkStatus(){
     }
     document.getElementById('markBtn').disabled = false;
   } catch(e) {
-    banner('Could not reach the backend. Check your connection.', 'red');
+    banner(e.message || 'Could not reach the backend. Check your connection.', 'red');
   }
 }
 
@@ -166,7 +187,7 @@ async function markAttendance(){
       method: 'POST',
       body: JSON.stringify({ action:'mark_attendance', roll, section: SECTION, lat: coords.latitude, lng: coords.longitude })
     });
-    const j = await r.json();
+    const j = await parseJsonSafe(r, true);
     if (!j.success){ banner(j.message, 'red'); btn.disabled = false; return; }
     banner(`✓ Marked present for ${j.data.date}. Attended so far: ${j.data.attendedSoFar}.`, 'green');
   } catch(e) {
