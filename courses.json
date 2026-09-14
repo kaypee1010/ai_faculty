@@ -1,0 +1,46 @@
+[
+  {
+    "courseId": "matlab-sem5",
+    "courseName": "MATLAB Programming",
+    "courseCode": "130205120",
+    "branch": "BTech CSE",
+    "program": "BTech",
+    "courseType": "Practical",
+    "sections": "B,E",
+    "execUrl": "https://script.google.com/macros/s/AKfycbwt6Ns52cxvtSvguPioFno8qprEXRZStpN71Y22_xwCftg3IS-u-GRphIjQMkuc7AFHng/exec",
+    "sheetUrl": "PASTE_SHEET_URL_HERE_AFTER_OPENING_THIS_COURSE_S_SHEET"
+  },
+  {
+    "courseId": "aiml-lab",
+    "courseName": "AI & Machine Learning Lab",
+    "courseCode": "130207112",
+    "branch": "BTech CSE",
+    "program": "BTech",
+    "courseType": "Practical",
+    "sections": "B",
+    "execUrl": "PASTE_EXEC_URL_HERE_AFTER_DEPLOYING_THIS_COURSE",
+    "sheetUrl": "PASTE_SHEET_URL_HERE_AFTER_OPENING_THIS_COURSE_S_SHEET"
+  },
+  {
+    "courseId": "aiml-lecture",
+    "courseName": "AI & Machine Learning (Lecture)",
+    "courseCode": "130207112",
+    "branch": "BTech CSE",
+    "program": "BTech",
+    "courseType": "Theory",
+    "sections": "B",
+    "execUrl": "PASTE_EXEC_URL_HERE_AFTER_DEPLOYING_THIS_COURSE",
+    "sheetUrl": "PASTE_SHEET_URL_HERE_AFTER_OPENING_THIS_COURSE_S_SHEET"
+  },
+  {
+    "courseId": "intro-ai",
+    "courseName": "Introduction to Artificial Intelligence",
+    "courseCode": "17200706",
+    "branch": "BSc Statistics & Data Science",
+    "program": "BSc (Hons.)",
+    "courseType": "Theory",
+    "sections": "A",
+    "execUrl": "https://script.google.com/macros/s/AKfycby_0mga-uJlWlkK_Cxwn9OeriTcqyikgnwHJBAISWZhZvo3o_X7v_RHugTZ0mLaPbZL/exec",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1yw4moMDj_OaQPgDsa6-E9GLeYK0eC_P9bRxJTuoQhsg/edit?gid=248140558#gid=248140558"
+  }
+]
