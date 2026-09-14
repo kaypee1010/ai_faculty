@@ -108,6 +108,33 @@ async function parseJsonSafe(r, backendCall){
   }
 }
 
+// Google Apps Script web apps on a personal (non-Workspace) account have a
+// real ceiling on simultaneous executions per script. When a whole
+// section marks attendance in the same minute, some requests queue or get
+// bounced and briefly look like "the backend can't be reached" even though
+// nothing is actually broken. A short retry with backoff absorbs that
+// instead of failing a student outright on the first busy moment. Safe to
+// retry mark_attendance specifically because a second call for an
+// already-marked roll+date is a clean, harmless ERR-409 server-side, never
+// a double mark.
+async function fetchJsonWithRetry(url, opts, backendCall, onRetry, tries){
+  tries = tries || 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= tries; attempt++){
+    try {
+      const r = await fetch(url, opts);
+      return await parseJsonSafe(r, backendCall);
+    } catch (e) {
+      lastErr = e;
+      if (attempt < tries){
+        if (onRetry) onRetry(attempt, tries);
+        await new Promise(res => setTimeout(res, 900 * attempt));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 async function resolveCourse(){
   // Legacy mode: an old link that still embeds the raw exec URL directly.
   if (LEGACY_API){
@@ -120,8 +147,7 @@ async function resolveCourse(){
     return false;
   }
   try {
-    const r = await fetch('courses.json');
-    const list = await parseJsonSafe(r);
+    const list = await fetchJsonWithRetry('courses.json', undefined, false, null, 2);
     const entry = list.find(c => c.courseId === COURSE_PARAM);
     if (!entry || !entry.execUrl || entry.execUrl.indexOf('PASTE_EXEC_URL') === 0){
       banner('This course link isn’t set up yet — ask your faculty to check courses.json.', 'red');
@@ -139,8 +165,11 @@ async function resolveCourse(){
 async function checkStatus(){
   if (!API_URL || !SECTION){ banner('This link is missing course/section info — ask your faculty for the correct link.', 'red'); return; }
   try {
-    const r = await fetch(`${API_URL}?action=attendance_status&section=${encodeURIComponent(SECTION)}`);
-    const j = await parseJsonSafe(r, true);
+    const j = await fetchJsonWithRetry(
+      `${API_URL}?action=attendance_status&section=${encodeURIComponent(SECTION)}`,
+      undefined, true,
+      (n, total) => banner(`<span class="spinner"></span>Server’s busy, retrying… (${n}/${total})`, 'amber')
+    );
     if (!j.success){ banner(j.message, 'red'); return; }
     if (j.data.status !== 'OPEN'){
       banner('Attendance is not open right now for this section.', 'amber');
@@ -183,11 +212,12 @@ async function markAttendance(){
   try {
     const coords = await getPosition();
     banner('<span class="spinner"></span>Marking attendance…', 'amber');
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action:'mark_attendance', roll, section: SECTION, lat: coords.latitude, lng: coords.longitude })
-    });
-    const j = await parseJsonSafe(r, true);
+    const j = await fetchJsonWithRetry(
+      API_URL,
+      { method: 'POST', body: JSON.stringify({ action:'mark_attendance', roll, section: SECTION, lat: coords.latitude, lng: coords.longitude }) },
+      true,
+      (n, total) => banner(`<span class="spinner"></span>Server’s busy, retrying… (${n}/${total})`, 'amber')
+    );
     if (!j.success){ banner(j.message, 'red'); btn.disabled = false; return; }
     banner(`✓ Marked present for ${j.data.date}. Attended so far: ${j.data.attendedSoFar}.`, 'green');
   } catch(e) {
