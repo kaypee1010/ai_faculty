@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Dashboard | ai_faculty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=Inconsolata:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --maroon-pale:#f3e3e2;
+    --amber:#a8620d; --amber-pale:#f3e8d4;
+    --red:#b3261e; --red-pale:#f6dedb;
+    --green:#2f6d3a; --green-pale:#e6f2e8;
+    --ink:#2a211c; --slate:#6b5f55; --border:#e4d9c8; --border-strong:#cdbea3;
+    --parchment:#faf6ec; --card:#fffdf8; --radius:12px;
+    --shadow:0 1px 2px rgba(50,30,20,.06), 0 4px 14px rgba(50,30,20,.06);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; padding-top:64px; background:var(--parchment); color:var(--ink);
+    font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.55; }
+  h1,h2,h3{font-family:'DM Serif Display',serif; font-weight:400; margin:0 0 .3em;}
+  .screen{display:none;} .screen.active{display:block;}
+  nav.nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center;
+    justify-content:space-between; padding:12px 20px; background:rgba(250,246,236,.85);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  .nav-brand{display:flex; align-items:center; gap:10px;}
+  .nav-logo{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--maroon);}
+  .nav-name{font-weight:700; font-size:14px;}
+  .nav-sub{font-family:'Inconsolata',monospace; font-size:10.5px; color:var(--slate); text-transform:uppercase; letter-spacing:.04em;}
+  .nav-cta{color:var(--maroon-dark); text-decoration:none; font-weight:600; font-size:12.5px;}
+
+  .wrap{max-width:820px; margin:0 auto; padding:26px 18px 60px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px;}
+  .card + .card{margin-top:14px;}
+  .eyebrow{font-family:'Inconsolata',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--maroon-dark); margin-bottom:6px;}
+  input[type=password], input[type=text], input[type=number], input[type=file], select{
+    width:100%; padding:11px 13px; border:1.5px solid var(--border-strong); border-radius:9px;
+    font-family:'Inconsolata',monospace; font-size:14px; margin-bottom:10px; background:#fff;
+  }
+  label.field-label{font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:6px;}
+  .btn{font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; border:none; border-radius:9px; padding:11px 18px; cursor:pointer;}
+  .btn-primary{background:var(--maroon); color:#fff;}
+  .btn-primary:hover{background:var(--maroon-dark);}
+  .btn-ghost{background:none; border:1px solid var(--border-strong); color:var(--ink); font-weight:600;}
+  .btn-link{background:none;border:none;color:var(--maroon-dark);font-weight:600;cursor:pointer;padding:0;font-size:13px;text-decoration:underline;}
+  .btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+  .banner{border-radius:9px; padding:11px 14px; font-size:13.5px; margin-bottom:14px;}
+  .banner.amber{background:var(--amber-pale); color:#6b4405;}
+  .banner.red{background:var(--red-pale); color:var(--red);}
+  .banner.green{background:var(--green-pale); color:var(--green);}
+
+  .seed-details{margin-top:18px; border-top:1px solid var(--border); padding-top:12px;}
+  .seed-details summary{cursor:pointer; list-style:none; font-family:'DM Sans',sans-serif;
+    font-weight:700; font-size:14px; color:var(--maroon-dark); padding:6px 0;
+    display:flex; align-items:center; gap:8px; user-select:none;}
+  .seed-details summary::-webkit-details-marker{display:none;}
+  .seed-details summary::before{content:'▸'; font-size:11px; display:inline-block;
+    transition:transform .15s ease;}
+  .seed-details[open] summary::before{transform:rotate(90deg);}
+  .seed-details .seed-body{padding-top:12px;}
+
+  .role-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:16px;}
+  @media(max-width:640px){ .role-grid{grid-template-columns:1fr;} }
+  .role-card{ border:1.5px solid var(--border-strong); border-radius:12px; padding:20px; text-align:left; background:#fff; cursor:pointer; }
+  .role-card:hover{border-color:var(--maroon);}
+  .role-card.disabled{ cursor:default; opacity:.55; }
+  .role-card.disabled:hover{ border-color:var(--border-strong); }
+  .role-card .rname{font-family:'DM Serif Display',serif; font-size:19px;}
+  .role-card .rdesc{font-size:12.5px; color:var(--slate); margin-top:4px;}
+  .role-tag{font-family:'Inconsolata',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--amber);margin-top:8px;display:block;}
+
+  .course-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;}
+  @media(max-width:520px){ .course-grid{grid-template-columns:1fr;} }
+  .course-card{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; text-align:left; background:#fff; cursor:pointer; transition:border-color .15s ease; }
+  .course-card:hover{border-color:var(--maroon);}
+  .course-card .cname{font-weight:700; font-size:15px;}
+  .course-card .cmeta{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); margin-top:4px;}
+
+  .tile-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  @media(max-width:520px){ .tile-grid{grid-template-columns:1fr;} }
+  .tile{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; background:#fff;
+    cursor:pointer; text-align:left; font-family:'DM Sans',sans-serif; }
+  .tile.active{border-color:var(--maroon); background:var(--maroon-pale);}
+  .tile .tname{font-weight:700; font-size:14.5px;}
+  .tile .tdesc{font-size:12px; color:var(--slate); margin-top:3px;}
+
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 4px; border-bottom:1px dashed var(--border); flex-wrap:wrap; }
+  .row:last-child{border-bottom:none;}
+  .row-id{font-family:'Inconsolata',monospace; font-weight:700; font-size:14px;}
+  .row-sub{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); margin-top:2px;}
+  .row-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill-btn{ font-family:'Inconsolata',monospace; font-size:11.5px; font-weight:700; padding:6px 12px;
+    border-radius:20px; border:none; cursor:pointer; }
+  .btn-open{background:var(--maroon); color:#fff;}
+  .btn-closed{background:var(--border-strong); color:var(--ink);}
+  .btn-released{background:var(--maroon-pale); color:var(--maroon-dark); border:1.5px solid var(--maroon);}
+  .btn-locked{background:var(--border-strong); color:var(--ink);}
+  .btn-delete{background:var(--red-pale); color:var(--red);}
+  .spinner{display:inline-block; width:14px;height:14px;border:2px solid var(--border-strong); border-top-color:var(--maroon);
+    border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px; margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  table.export-table{width:100%; border-collapse:collapse; font-family:'Inconsolata',monospace; font-size:12.5px; margin-top:10px;}
+  table.export-table th, table.export-table td{border-bottom:1px solid var(--border); padding:6px 8px; text-align:left;}
+  table.export-table th{color:var(--slate); font-weight:600;}
+  .hint{font-size:12px;color:var(--slate);margin-top:4px;}
+  .erp-sync{margin-top:18px; border-top:1px solid var(--border); padding-top:14px;}
+  .erp-sync .row-inline{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;}
+  .erp-sync .row-inline > div{flex:1 1 140px; min-width:120px;}
+  .erp-sync .row-inline input, .erp-sync .row-inline select{margin-bottom:0;}
+  .script-box{position:relative; margin-top:12px;}
+  .script-box pre{background:#241a15; color:#f3e8d4; border-radius:9px; padding:14px 16px;
+    font-family:'Inconsolata',monospace; font-size:12px; line-height:1.55; overflow-x:auto;
+    white-space:pre; margin:0; max-height:340px; overflow-y:auto;}
+  .script-box .copy-btn{position:absolute; top:8px; right:8px;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <img class="nav-logo" src="KP_Singh.png" alt="K.P. Singh"/>
+    <div>
+      <div class="nav-name">K.P. Singh</div>
+      <div class="nav-sub" id="navSub">ai_faculty · Faculty Dashboard</div>
+    </div>
+  </div>
+  <a class="nav-cta" href="https://kpsingh.in" target="_blank">kpsingh.in ↗</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- SCREEN 0: role picker -->
+  <div id="roleScreen" class="screen active">
+    <div class="card">
+      <div class="eyebrow">ai_faculty</div>
+      <h1 style="font-size:24px;">Choose your role</h1>
+      <div class="role-grid">
+        <div class="role-card" onclick="goToGate()">
+          <div class="rname">Facilitator</div>
+          <div class="rdesc">Run your courses — attendance, lecture/lab material, quizzes, syllabus.</div>
+        </div>
+        <div class="role-card" onclick="goToEventCoordinator()">
+          <div class="rname">Event Coordinator</div>
+          <div class="rdesc">Open/close SGIF League events, release review, seed question banks.</div>
+        </div>
+        <div class="role-card disabled">
+          <div class="rname">Mentor</div>
+          <div class="rdesc">Attendance oversight, ML/OD/Internship approval, student guidance.</div>
+          <span class="role-tag">Designed later</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: PIN gate (Facilitator) -->
+  <div id="gateScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Facilitator</div>
+      <h1 style="font-size:24px;">Enter PIN</h1>
+      <p style="color:var(--slate);font-size:13.5px;">One PIN unlocks every course below — you won't be asked again this session.</p>
+      <input type="password" id="gatePin" placeholder="••••" autocomplete="off">
+      <button class="btn btn-primary" onclick="checkGate()">Unlock →</button>
+      <div id="gateStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: course picker -->
+  <div id="pickerScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Facilitator</div>
+      <h1 style="font-size:24px;">Pick a course</h1>
+      <p style="color:var(--slate); font-size:13.5px; margin-top:4px;">Attendance, lecture/lab material, quizzes, syllabus — all per course.</p>
+      <div class="course-grid" id="courseGrid">
+        <p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading courses…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: course dashboard (5 tiles) -->
+  <div id="courseScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToPicker()">← All courses</button>
+      <h1 id="courseTitle" style="font-size:22px; margin-top:10px;"></h1>
+      <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--slate);" id="courseMeta"></div>
+      <div class="tile-grid" id="tileGrid"></div>
+    </div>
+
+    <div id="tileBody"></div>
+  </div>
+
+  <!-- SCREEN 4: Event Coordinator (SGIF — single shared backend, own password) -->
+  <div id="eventUnlockScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Event Coordinator</div>
+      <h1 style="font-size:22px;">SGIF League</h1>
+      <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin:14px 0 6px;">Admin password</label>
+      <input type="password" id="eventPwInput" placeholder="••••••••" autocomplete="off">
+      <button class="btn btn-primary" onclick="unlockEvents()">Unlock →</button>
+      <div id="eventUnlockStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div id="eventScreen" class="screen">
+    <div class="card">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:10px;">Event Coordinator</div>
+      <h1 style="font-size:20px;">SGIF League — Events</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+        <h2 style="font-size:18px;">Events</h2>
+        <button class="btn-ghost btn btn-sm" onclick="loadEvents()">↻ Refresh</button>
+      </div>
+      <div class="banner amber" style="margin-top:10px;">
+        Open/close only — same password model as course quizzes, but a
+        different backend (SGIF). Events deliberately have no review-release
+        step: results are competitive and often public.
+      </div>
+      <div id="eventList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===================== SHARED ===================== */
+let COURSES = [], CURRENT = null, PIN = '';
+
+// SGIF has one fixed backend — from K.P.'s own seed tool. Edit directly if it redeploys.
+const SGIF_API_URL = 'https://script.google.com/macros/s/AKfycbzVS975A91DdDztHGIofJADerYEBDf2N9jPBjTyxO8Zr-0hH9Cv5e3-bevKdEdXny7k/exec';
+let EVENT_PASSWORD = '';
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ===================== ROLE PICKER ===================== */
+function goToGate(){
+  const saved = sessionStorage.getItem('facilitatorPin');
+  if (saved){
+    PIN = saved;
+    showScreen('pickerScreen');
+    loadCourses();
+    return;
+  }
+  document.getElementById('gatePin').value = '';
+  document.getElementById('gateStatus').innerHTML = '';
+  showScreen('gateScreen');
+}
+function goToEventCoordinator(){
+  EVENT_PASSWORD = '';
+  document.getElementById('eventPwInput').value = '';
+  document.getElementById('eventUnlockStatus').innerHTML = '';
+  showScreen('eventUnlockScreen');
+}
+function backToRoles(){ showScreen('roleScreen'); }
+
+function checkGate(){
+  const v = document.getElementById('gatePin').value.trim();
+  if (!v){ return; }
+  PIN = v;
+  sessionStorage.setItem('facilitatorPin', PIN);
+  showScreen('pickerScreen');
+  loadCourses();
+}
+
+/* ===================== FACILITATOR: COURSE PICKER ===================== */
+async function loadCourses(){
+  const grid = document.getElementById('courseGrid');
+  grid.innerHTML = '<p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading courses…</p>';
+  try {
+    const r = await fetch('courses.json');
+    COURSES = await r.json();
+  } catch(e) {
+    grid.innerHTML = '<div class="banner red">Could not load courses.json — check it exists alongside this page.</div>';
+    return;
+  }
+  if (!COURSES.length){
+    grid.innerHTML = '<p style="color:var(--slate);font-size:13px;">No courses registered yet — add one to courses.json.</p>';
+    return;
+  }
+  grid.innerHTML = COURSES.map((c, i) => `
+    <button class="course-card" onclick="selectCourse(${i})">
+      <div class="cname">${c.courseName}</div>
+      <div class="cmeta">${[c.branch, c.program, c.courseType].filter(Boolean).join(' · ')}</div>
+    </button>
+  `).join('');
+}
+
+// (Sep 2026) selectCourse() used to make a live admin_list call to verify
+// the stored PIN against THIS course's backend before showing any tiles —
+// a full Apps Script round-trip (slow, and worse whenever the backend is
+// busy — see the api() note below) on every single course click, purely to
+// pre-check something that only matters if a course was set up with a
+// non-standard password (every course is meant to share ADMIN_PASSWORD=2012,
+// see the deployment checklist). Removed: tiles now render immediately.
+// If a course's password genuinely doesn't match, the mismatch surfaces
+// naturally the moment any password-gated action actually runs (ERR-401 —
+// see maybeShowPasswordPrompt(), wired into api() below), which is rare in
+// practice and no slower than before, just no longer paid on every click.
+function selectCourse(i){
+  CURRENT = COURSES[i];
+  showScreen('courseScreen');
+  document.getElementById('courseTitle').textContent = CURRENT.courseName;
+  document.getElementById('courseMeta').textContent = [CURRENT.branch, CURRENT.program, CURRENT.sections ? ('sections: '+CURRENT.sections) : ''].filter(Boolean).join(' · ');
+  document.getElementById('tileBody').innerHTML = '';
+  renderTiles();
+}
+
+// Shown inline, on top of whatever tile is open, the first time a
+// password-gated call comes back ERR-401 for the current course — instead
+// of blocking course entry upfront on a check that's almost always fine.
+function maybeShowPasswordPrompt(){
+  if (document.getElementById('pwMismatchBanner')) return; // already showing
+  const body = document.getElementById('tileBody');
+  if (!body || !CURRENT) return;
+  body.insertAdjacentHTML('afterbegin', `
+    <div class="card banner amber" id="pwMismatchBanner">
+      This course's password didn't match your PIN. Enter it once for this course.
+      <div style="margin-top:8px;">
+        <input type="password" id="coursePwInput" placeholder="Password for ${CURRENT.courseName}" autocomplete="off">
+        <button class="btn btn-primary btn-sm" onclick="retryCoursePassword()">Unlock this course →</button>
+        <div id="coursePwStatus" style="margin-top:8px;"></div>
+      </div>
+    </div>`);
+}
+
+async function retryCoursePassword(){
+  const pw = document.getElementById('coursePwInput').value;
+  const statusEl = document.getElementById('coursePwStatus');
+  if (!pw) return;
+  statusEl.innerHTML = '<span class="spinner"></span>Checking…';
+  try {
+    const r = await fetch(`${CURRENT.execUrl}?action=admin_list&password=${encodeURIComponent(pw)}`);
+    const j = await r.json();
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">Wrong password.</div>'; return; }
+    PIN = pw; // use this course's password for the rest of this session
+    document.getElementById('pwMismatchBanner').remove();
+    if (ACTIVE_TILE) openTile(ACTIVE_TILE); else renderTiles();
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not reach this course\'s backend.</div>';
+  }
+}
+
+function backToPicker(){
+  CURRENT = null;
+  document.getElementById('tileBody').innerHTML = '';
+  showScreen('pickerScreen');
+}
+
+/* ===================== TILES ===================== */
+function renderTiles(){
+  const tiles = [
+    {id:'attendance', name:'Attendance', desc:'Open/close per section · ERP export'},
+    CURRENT.courseType === 'Practical'
+      ? {id:'lab', name:'Lab Creation', desc:'Manuals, guides, scripts'}
+      : {id:'lecture', name:'Lecture Creation', desc:'Notes, presenter scripts'},
+    {id:'quiz', name:'Quiz & Assessment', desc:'Open/close · review release'},
+    {id:'od', name:'OD Requests', desc:'Review & approve Official Duty'},
+    {id:'syllabus', name:'Upload Syllabus', desc:'Course syllabus file'},
+    {id:'sheet', name:'Marks & Attendance Sheet', desc:'Open the Google Sheet ↗'},
+  ];
+  document.getElementById('tileGrid').innerHTML = tiles.map(t =>
+    `<button class="tile" id="tile_${t.id}" onclick="openTile('${t.id}')">
+       <div class="tname">${t.name}</div><div class="tdesc">${t.desc}</div>
+     </button>`
+  ).join('');
+}
+
+// (Sep 2026) api() used to be `fetch(...).then(r=>r.json())` with no error
+// handling at all. Two real problems that caused: (1) a slow/failed request
+// or a non-JSON reply (e.g. Apps Script returning an HTML page when its
+// per-script execution quota is hit — real, and easy to hit when a whole
+// section is marking attendance in the same minute on a personal Google
+// account) made the returned promise REJECT; every caller (refreshAttendanceStatus,
+// loadErpDates, etc.) does `const j = await api(...)` with no try/catch, so
+// a rejection just threw, silently, and left that UI stuck on "checking…"
+// or "Loading…" forever — no error, no retry, looks exactly like "takes
+// ages to show / doesn't show." (2) no retry at all, so any one transient
+// hiccup was terminal. api() now never rejects — it always resolves to a
+// {success,...} shape every caller already expects — and retries GETs
+// (read-only, safe to retry) a couple of times with backoff before giving
+// up. POSTs (mutations) still fire once, not auto-retried.
+async function parseJsonSafe_(r){
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch(e){ throw new Error('Got an unexpected reply from the server — it may be busy. Try again in a moment.'); }
+}
+async function api(action, params, method, body){
+  const url = new URL(CURRENT.execUrl);
+  url.searchParams.set('action', action);
+  Object.keys(params||{}).forEach(k => url.searchParams.set(k, params[k]));
+  const isPost = method === 'POST';
+  const tries = isPost ? 1 : 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= tries; attempt++){
+    try {
+      const r = isPost
+        ? await fetch(url.toString(), { method:'POST', body: JSON.stringify(Object.assign({action}, body||{})) })
+        : await fetch(url.toString());
+      const j = await parseJsonSafe_(r);
+      if (j && j.success === false && j.code === 'ERR-401') maybeShowPasswordPrompt();
+      return j;
+    } catch(e){
+      lastErr = e;
+      if (attempt < tries) await new Promise(res => setTimeout(res, 900 * attempt));
+    }
+  }
+  return { success:false, message: (lastErr && lastErr.message) || 'Could not reach the backend. Check your connection and try again.' };
+}
+
+let ACTIVE_TILE = null;
+function openTile(id){
+  // 'sheet' is a plain external-link shortcut, not an in-app panel — it
+  // opens the course's own Google Sheet (marks/attendance data live there,
+  // same Sheet the backend writes to) in a new tab and leaves whichever
+  // tile was already active untouched, rather than switching tileBody.
+  if (id === 'sheet'){
+    if (!CURRENT.sheetUrl || /^PASTE_/.test(CURRENT.sheetUrl)){
+      alert('No Sheet link set for this course yet — add one to courses.json (sheetUrl field).');
+      return;
+    }
+    window.open(CURRENT.sheetUrl, '_blank');
+    return;
+  }
+  ACTIVE_TILE = id;
+  document.querySelectorAll('.tile').forEach(el => el.classList.remove('active'));
+  document.getElementById('tile_'+id).classList.add('active');
+  const body = document.getElementById('tileBody');
+  body.innerHTML = '<div class="card"><span class="spinner"></span>Loading…</div>';
+  if (id === 'attendance') renderAttendanceTile();
+  else if (id === 'lecture') renderContentTile('Lecture', 'Lecture Creation');
+  else if (id === 'lab') renderContentTile('Lab', 'Lab Creation');
+  else if (id === 'syllabus') renderContentTile('Syllabus', 'Upload Syllabus');
+  else if (id === 'quiz') renderQuizTile();
+  else if (id === 'od') renderOdTile();
+}
+
+/* ---------- ATTENDANCE TILE ---------- */
+async function renderAttendanceTile(){
+  const sections = (CURRENT.sections || '').split(',').map(s=>s.trim()).filter(Boolean);
+  const body = document.getElementById('tileBody');
+  if (!sections.length){
+    body.innerHTML = '<div class="card banner red">No sections configured for this course in courses.json.</div>';
+    return;
+  }
+  let html = '<div class="card"><h2 style="font-size:18px;">Attendance</h2>';
+  html += '<div id="attCards"></div>';
+  html += '<h3 style="font-size:15px;margin-top:18px;">ERP export</h3>';
+  html += '<button class="btn btn-ghost btn-sm" onclick="loadErpExport()">↻ Load export</button>';
+  html += '<div id="erpExport"></div>';
+
+  html += '<div class="erp-sync">';
+  html += '<h3 style="font-size:15px;">Copy one day\'s attendance to the ERP portal</h3>';
+  html += '<p class="hint">Pick a section and a date, generate the script below, then paste it into the browser console on that class\'s ERP attendance page — it ticks the present students\' checkboxes only, it never clicks Submit/Save for you.</p>';
+  html += '<div class="row-inline">';
+  html += '<div><label class="field-label">Section</label><select id="erpSection">' +
+          sections.map(s => `<option value="${s}">${s}</option>`).join('') + '</select></div>';
+  html += '<div><label class="field-label">Date</label><input type="date" id="erpDate"></div>';
+  html += '<div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="generateErpScript()">Generate script</button></div>';
+  html += '</div>';
+  html += '<p class="hint" id="erpDatesHint">Loading recorded session dates…</p>';
+  html += '<div id="erpScriptOut"></div>';
+  html += '</div></div>';
+  body.innerHTML = html;
+  loadErpDates();
+
+  const cardsEl = document.getElementById('attCards');
+  cardsEl.innerHTML = sections.map(s => `
+    <div class="row" id="attRow_${s}">
+      <div>
+        <div class="row-id">Section ${s}</div>
+        <div class="row-sub" id="attSub_${s}">checking…</div>
+      </div>
+      <div class="row-actions">
+        <button class="pill-btn btn-closed" id="attBtn_${s}" onclick="toggleAttendance('${s}')">…</button>
+        <a class="btn-ghost btn btn-sm" href="attendance.html?course=${encodeURIComponent(CURRENT.courseId)}&section=${encodeURIComponent(s)}" target="_blank">Open marking page ↗</a>
+      </div>
+    </div>
+  `).join('');
+
+  for (const s of sections) refreshAttendanceStatus(s);
+}
+async function refreshAttendanceStatus(section){
+  const j = await api('attendance_status', {section});
+  const btn = document.getElementById('attBtn_'+section);
+  const sub = document.getElementById('attSub_'+section);
+  if (!j.success){ sub.textContent = 'error: ' + j.message; return; }
+  const open = j.data.status === 'OPEN';
+  btn.className = 'pill-btn ' + (open ? 'btn-open' : 'btn-closed');
+  btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
+  sub.textContent = 'today: ' + j.data.dateKey;
+}
+// (Sep 2026) This used to await attendance_toggle, then await a SECOND,
+// separate attendance_status call just to redraw the same button — two
+// full Apps Script round-trips back to back, with no visual feedback in
+// between, which is what made a toggle feel like it had frozen. Fixed:
+// disable + show a spinner the instant it's clicked (so it never looks
+// dead), and use the status the toggle call already returns to update the
+// button immediately — one round-trip, not two. refreshAttendanceStatus()
+// still runs after, but only in the background to refresh the "today: …"
+// date label; it no longer blocks the button.
+async function toggleAttendance(section){
+  const btn = document.getElementById('attBtn_'+section);
+  const sub = document.getElementById('attSub_'+section);
+  const cur = btn.textContent.includes('OPEN');
+  const prevHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>…';
+  const j = await api('attendance_toggle', {password:PIN, section, status: cur ? 'CLOSED':'OPEN'});
+  btn.disabled = false;
+  if (!j.success){
+    btn.innerHTML = prevHtml;
+    if (sub) sub.textContent = 'error: ' + j.message;
+    return; // don't refresh — the toggle didn't actually happen (e.g. wrong password)
+  }
+  const open = j.data.status === 'OPEN';
+  btn.className = 'pill-btn ' + (open ? 'btn-open' : 'btn-closed');
+  btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
+  refreshAttendanceStatus(section); // background refresh of the date sub-label only
+}
+async function loadErpExport(){
+  const j = await api('attendance_report', {password:PIN});
+  const el = document.getElementById('erpExport');
+  if (!j.success){ el.innerHTML = '<div class="banner red">'+j.message+'</div>'; return; }
+  if (!j.data.length){ el.innerHTML = '<p class="hint">No attendance marked yet.</p>'; return; }
+  el.innerHTML = '<table class="export-table"><tr><th>Roll</th><th>Name</th><th>Sec</th><th>Held</th><th>Attended</th><th>%</th></tr>' +
+    j.data.map(r => `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.section}</td><td>${r.held}</td><td>${r.attended}</td><td>${r.pct}%</td></tr>`).join('') +
+    '</table><p class="hint">Copy-paste ready for your ERP script once you share its expected column order.</p>';
+}
+
+/* ---------- ERP per-day sync script (Sep 2026) ----------
+   Converts an <input type=date> value ("2026-08-26") to the same 'd-MMM'
+   label the backend stores as its Attendance date-column header ("26-Aug") —
+   Utilities.formatDate(date, tz, 'd-MMM') on the Apps Script side. Day has
+   no leading zero, month is a 3-letter abbreviation. No year in either —
+   attendance data is scoped to one semester, so this is unambiguous. */
+const MONTH_ABBR_ = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function isoToDMmm(iso){
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d}-${MONTH_ABBR_[m-1]}`;
+}
+
+async function loadErpDates(){
+  const hint = document.getElementById('erpDatesHint');
+  const j = await api('attendance_dates', {password:PIN});
+  if (!hint) return; // tile may have been switched away from already
+  if (!j.success){ hint.textContent = 'Could not load recorded dates: ' + j.message; return; }
+  hint.textContent = j.data.dates.length
+    ? 'Recorded sessions: ' + j.data.dates.join(', ')
+    : 'No attendance has been recorded for this course yet.';
+}
+
+async function generateErpScript(){
+  const section = document.getElementById('erpSection').value;
+  const isoDate = document.getElementById('erpDate').value;
+  const out = document.getElementById('erpScriptOut');
+  if (!isoDate){ out.innerHTML = '<div class="banner red">Pick a date first.</div>'; return; }
+  const dateLabel = isoToDMmm(isoDate);
+  out.innerHTML = '<p class="hint"><span class="spinner"></span>Looking up ' + dateLabel + '…</p>';
+
+  const j = await api('attendance_daylist', {password:PIN, section, date: dateLabel});
+  if (!j.success){ out.innerHTML = '<div class="banner red">' + j.message + '</div>'; return; }
+
+  const rolls = j.data.presentRolls;
+  const script =
+`// Auto-generated — ${CURRENT.courseName} — Section ${section} — ${j.data.date}
+// Present roll numbers: ${rolls.length} of ${j.data.totalStudents}
+// Marks checkboxes only — does NOT click Submit/Save. Review, then submit yourself.
+
+function markAttendance(presentRollNumbers) {
+  const rows = document.querySelectorAll('tr.odd, tr.even');
+  let markedCount = 0;
+  rows.forEach(tr => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length < 3) return;
+    const rollNo = cells[2].innerText.trim();
+    const checkbox = cells[0].querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      const shouldBeChecked = presentRollNumbers.includes(rollNo);
+      if (checkbox.checked !== shouldBeChecked) checkbox.click();
+      if (shouldBeChecked) markedCount++;
+    }
+  });
+  console.log(\`Marked \${markedCount} students as present. Review the checkboxes, then click Submit/Save yourself.\`);
+}
+
+const presentRollNumbers = ${JSON.stringify(rolls)};
+markAttendance(presentRollNumbers);`;
+
+  out.innerHTML = '<div class="script-box"><button class="btn btn-ghost btn-sm copy-btn" onclick="copyErpScript(this)">📋 Copy</button>' +
+    '<pre id="erpScriptText"></pre></div>' +
+    '<p class="hint">' + rolls.length + ' present, ' + (j.data.totalStudents - rolls.length) + ' absent on ' + j.data.date + ' (section ' + section + ').</p>';
+  document.getElementById('erpScriptText').textContent = script;
+}
+
+function copyErpScript(btn){
+  const text = document.getElementById('erpScriptText').textContent;
+  const done = () => { const old = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = old, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy_(text, done));
+  } else {
+    fallbackCopy_(text, done);
+  }
+}
+function fallbackCopy_(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+/* ---------- CONTENT TILES (Lecture / Lab / Syllabus) ----------
+   Field names below match Code-v3.1.gs's Content Library exactly
+   (inherited unchanged from Code-v2.1.gs): driveFileId, dataBase64,
+   fileName, visible (boolean TRUE/FALSE), driveUrl. Do not rename
+   these — the backend was deliberately kept byte-for-byte identical
+   to the already-working v2.1 Content Library. */
+async function renderContentTile(type, label){
+  const body = document.getElementById('tileBody');
+  body.innerHTML = `<div class="card">
+    <h2 style="font-size:18px;">${label}</h2>
+    <div id="contentList"></div>
+    <h3 style="font-size:15px;margin-top:18px;">Add new</h3>
+    <label class="field-label">Title</label>
+    <input type="text" id="contentTitleInput" placeholder="e.g. Week 6 — Decision Trees">
+    <label class="field-label">File</label>
+    <input type="file" id="contentFile">
+    <button class="btn btn-primary" onclick="uploadContent('${type}')">Upload</button>
+    <div id="uploadStatus"></div>
+  </div>`;
+  loadContentList(type);
+}
+async function loadContentList(type){
+  const j = await api('content_list', {password:PIN, type});
+  const el = document.getElementById('contentList');
+  if (!j.success){ el.innerHTML = '<div class="banner red">'+(j.message||'Could not load the list.')+'</div>'; return; }
+  if (!j.data.length){ el.innerHTML = '<p class="hint">Nothing uploaded yet.</p>'; return; }
+  el.innerHTML = j.data.map(item => `
+    <div class="row">
+      <div>
+        <div class="row-id">${item.title}</div>
+        <div class="row-sub">${item.fileName} · <a href="${item.driveUrl}" target="_blank">open in Drive ↗</a></div>
+      </div>
+      <div class="row-actions">
+        <button class="pill-btn ${item.visible?'btn-open':'btn-closed'}" onclick="toggleVisible('${item.driveFileId}', ${item.visible}, '${type}')">
+          ${item.visible ? '● Visible — tap to hide' : '○ Hidden — tap to publish'}
+        </button>
+        <button class="pill-btn btn-delete" onclick="deleteContent('${item.driveFileId}', '${type}')">🗑 Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleVisible(driveFileId, currentlyVisible, type){
+  await api('content_toggle_visible', {password:PIN, driveFileId, visible: currentlyVisible ? 'FALSE':'TRUE'});
+  loadContentList(type);
+}
+async function deleteContent(driveFileId, type){
+  if (!confirm('Delete this file? This removes it from Drive and from the list.')) return;
+  await api('content_delete', {password:PIN, driveFileId});
+  loadContentList(type);
+}
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadContent(type){
+  const title = document.getElementById('contentTitleInput').value.trim();
+  const fileInput = document.getElementById('contentFile');
+  const statusEl = document.getElementById('uploadStatus');
+  if (!fileInput.files.length){ statusEl.innerHTML = '<div class="banner red">Pick a file first.</div>'; return; }
+  const file = fileInput.files[0];
+  statusEl.innerHTML = '<span class="spinner"></span>Uploading…';
+  try {
+    const dataBase64 = await fileToBase64(file);
+    const j = await api('content_upload', {}, 'POST', {
+      password: PIN, type, title: title || file.name, fileName: file.name,
+      mimeType: file.type || 'application/octet-stream', dataBase64
+    });
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">'+(j.message||'Upload failed.')+'</div>'; return; }
+    statusEl.innerHTML = '<div class="banner green">Uploaded — remember to toggle it Visible when ready.</div>';
+    document.getElementById('contentTitleInput').value = '';
+    fileInput.value = '';
+    loadContentList(type);
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Upload failed — check the file size (keep it under ~25MB) and try again.</div>';
+  }
+}
+
+/* ---------- QUIZ & ASSESSMENT TILE ---------- */
+async function renderQuizTile(){
+  const body = document.getElementById('tileBody');
+  body.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="font-size:18px;">Quizzes</h2>
+      <button class="btn-ghost btn btn-sm" onclick="loadQuizzes()">↻ Refresh</button>
+    </div>
+    <div class="banner amber">
+      <b>OPEN</b> lets students start the quiz. <b>RELEASED</b> lets students who've
+      already submitted see their answers reviewed — keep this LOCKED until every
+      sitting for a quiz is done.
+    </div>
+    <div id="quizList"></div>
+    <details class="seed-details" id="seedPanel">
+      <summary>Seed a new quiz</summary>
+      <div class="seed-body">
+        <p class="hint">Build the quiz HTML and the questions with the ai-faculty-quiz-generator
+          skill in a Claude chat first (it needs your judgment — subject, syllabus material,
+          difficulty — a form can't do that part). Once it hands you back the Question Bank
+          Seed Payload (Step 6 of that skill's output), paste it below. One click seeds the
+          question bank on this course's backend <i>and</i> adds the Quiz_ID to this dashboard
+          — replacing the separate seed_tool.html + manual Config-tab step.
+          You still upload the generated quiz.html to kpsingh.in yourself, same as before.</p>
+        <label class="field-label">Quiz_ID</label>
+        <input type="text" id="seedQuizId" placeholder="e.g. MATLAB-LAB6">
+        <label class="field-label">Max Marks Mode</label>
+        <select id="seedMaxMarksMode">
+          <option value="flat">flat (every question worth 1 mark)</option>
+          <option value="weighted">weighted (easy=1, medium=2, hard=3 marks)</option>
+        </select>
+        <label class="field-label">Draw size (optional — leave blank to serve the whole pool every time)</label>
+        <input type="text" id="seedDrawSize" placeholder="e.g. 20 — only if the pool is bigger than what each student sees">
+        <label class="field-label">Questions (the JSON array from the skill's Step 6 output)</label>
+        <textarea id="seedQuestions" style="width:100%;min-height:180px;font-family:'Inconsolata',monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--border-strong);border-radius:9px;" placeholder='[
+  { "id":"Q1", "q":"...", "opts":["A","B","C","D"], "a":0, "tag":"...", "difficulty":"easy" },
+  ...
+]'></textarea>
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="seedAndAddQuiz()">Seed &amp; add to dashboard</button>
+        <div id="seedQuizStatus" style="margin-top:10px;"></div>
+      </div>
+    </details>
+  </div>`;
+  loadQuizzes();
+}
+async function loadQuizzes(){
+  const j = await api('admin_list', {password:PIN});
+  const wrap = document.getElementById('quizList');
+  if (!j.success){ wrap.innerHTML = '<div class="banner red">'+(j.message||'Could not load quizzes.')+'</div>'; return; }
+  if (!j.data.length){ wrap.innerHTML = '<p class="hint">No quizzes yet for this course.</p>'; return; }
+  wrap.innerHTML = j.data.map(q => `
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span class="row-id">${q.quizId}</span>
+        <div class="row-actions">
+          <button class="pill-btn ${q.status==='OPEN'?'btn-open':'btn-closed'}"
+            onclick="toggleQuizStatus('${q.quizId}', '${q.status==='OPEN'?'CLOSED':'OPEN'}')">
+            ${q.status==='OPEN' ? '● OPEN — tap to close' : '○ CLOSED — tap to open'}
+          </button>
+          <button class="pill-btn ${q.reviewStatus==='RELEASED'?'btn-released':'btn-locked'}"
+            onclick="toggleQuizReview('${q.quizId}', '${q.reviewStatus==='RELEASED'?'LOCKED':'RELEASED'}')">
+            ${q.reviewStatus==='RELEASED' ? '🔓 Review released' : '🔒 Review locked'}
+          </button>
+          <button class="pill-btn ${q.scorecardStatus==='ON'?'btn-released':'btn-locked'}"
+            onclick="toggleQuizScorecard('${q.quizId}', '${q.scorecardStatus==='ON'?'OFF':'ON'}')"
+            title="Rank/percentile vs cohort — usually worth turning on once a course has a few quizzes' history">
+            ${q.scorecardStatus==='ON' ? '📊 Scorecard on' : '📊 Scorecard off'}
+          </button>
+          <button class="pill-btn ${q.retryStatus==='ON'?'btn-released':'btn-locked'}"
+            onclick="toggleQuizRetryMode('${q.quizId}', '${q.retryStatus==='ON'?'OFF':'ON'}')"
+            title="ON lets every student retake this quiz (e.g. practice mode). OFF (default) is one attempt per student, with one-off exceptions grantable below.">
+            ${q.retryStatus==='ON' ? '🔁 Retries: whole class ON' : '🔁 One attempt per student'}
+          </button>
+        </div>
+      </div>
+      <div class="row-actions" style="align-items:center">
+        <input type="text" placeholder="Roll number" id="retryRoll_${q.quizId}" style="max-width:160px;padding:6px 10px;font-size:12.5px;">
+        <button class="pill-btn btn-open" onclick="approveRetry('${q.quizId}')">✅ Approve one retry for this roll</button>
+        <span class="row-sub" id="retryApproveStatus_${q.quizId}"></span>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleQuizStatus(quizId, newStatus){
+  await api('admin_set_status', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function toggleQuizReview(quizId, newStatus){
+  if (newStatus === 'RELEASED' && !confirm(`Release answers for ${quizId} to all students who've submitted? This can't be un-shown to anyone who's already seen it.`)) return;
+  await api('admin_set_review', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function toggleQuizScorecard(quizId, newStatus){
+  await api('admin_set_scorecard', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function toggleQuizRetryMode(quizId, newStatus){
+  if (newStatus === 'ON' && !confirm(`Let every student retake ${quizId}? Turn this off again once you're done, so one-attempt-per-student resumes.`)) return;
+  await api('admin_set_retry_mode', {password:PIN, quiz:quizId, status:newStatus});
+  loadQuizzes();
+}
+async function approveRetry(quizId){
+  const rollEl = document.getElementById('retryRoll_'+quizId);
+  const statusEl = document.getElementById('retryApproveStatus_'+quizId);
+  const roll = rollEl.value.trim();
+  if (!roll){ statusEl.textContent = 'Enter a roll number first.'; return; }
+  statusEl.textContent = 'Approving…';
+  const res = await api('admin_approve_retry', {password:PIN, quiz:quizId, roll});
+  statusEl.textContent = res.success
+    ? `✓ ${roll} can take ${quizId} again — consumed the moment they start it.`
+    : 'Could not approve: ' + (res.message || 'unknown error');
+  if (res.success) rollEl.value = '';
+}
+/* Seeding a quiz touches the answer key (the "a" field in each question),
+   so this reuses the exact seed_question_bank contract from seed_tool.html
+   — same payload shape, same admin secret, just called from here instead
+   of a separate local file. Nothing about where the answer key travels
+   changes: it's still only ever sent once, by you, behind this same
+   password gate every other admin action on this dashboard already uses. */
+async function seedAndAddQuiz(){
+  const quizId = document.getElementById('seedQuizId').value.trim();
+  const maxMarksMode = document.getElementById('seedMaxMarksMode').value;
+  const drawSizeRaw = document.getElementById('seedDrawSize').value.trim();
+  const questionsRaw = document.getElementById('seedQuestions').value.trim();
+  const statusEl = document.getElementById('seedQuizStatus');
+
+  if (!quizId || !questionsRaw){
+    statusEl.innerHTML = '<div class="banner red">Quiz_ID and the questions JSON are both required.</div>';
+    return;
+  }
+  let questions;
+  try {
+    questions = JSON.parse(questionsRaw);
+    if (!Array.isArray(questions) || questions.length === 0) throw new Error('not a non-empty array');
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not parse the questions JSON: '+e.message+' — make sure it\'s a valid JSON array, exactly as the skill emitted it.</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spinner"></span>Seeding question bank…';
+  const seedBody = { key: PIN, quizId, maxMarksMode, questions };
+  if (drawSizeRaw){
+    const n = parseInt(drawSizeRaw, 10);
+    if (!isNaN(n)) seedBody.drawSize = n;
+  }
+  const seedResult = await api('seed_question_bank', {}, 'POST', seedBody);
+  if (!seedResult.success){
+    statusEl.innerHTML = '<div class="banner red">Seeding failed: '+(seedResult.message||'unknown error')+'</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spinner"></span>Seeded '+seedResult.data.seeded+' question(s) — registering on dashboard…';
+  const addResult = await api('admin_add_quiz', {password:PIN, quiz:quizId});
+  if (!addResult.success){
+    statusEl.innerHTML = '<div class="banner amber">Seeded '+seedResult.data.seeded+' question(s), but could not auto-register the Quiz_ID ('+(addResult.message||'unknown error')+'). Add it to the Config tab\'s quiz_list by hand.</div>';
+    loadQuizzes();
+    return;
+  }
+
+  statusEl.innerHTML = '<div class="banner green">Seeded '+seedResult.data.seeded+' question(s) and added to the dashboard, left CLOSED. Upload the quiz.html the skill gave you to kpsingh.in, then toggle it OPEN below when ready.</div>';
+  document.getElementById('seedQuestions').value = '';
+  loadQuizzes();
+}
+
+/* ---------- OD REQUESTS TILE ----------
+   Field names match Code-v3.10.gs's list_od/review_od exactly: requestId,
+   roll, name, section, type, detail, dateFrom/dateTo, daysRequested,
+   fileName, driveUrl, status, approvedDates, rejectReason, exceedsCap
+   (computed server-side against the CURRENT max_od_days, so it's always
+   accurate even if the cap changed after the request was submitted). */
+async function renderOdTile(){
+  const body = document.getElementById('tileBody');
+  body.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="font-size:18px;">OD Requests</h2>
+      <button class="btn-ghost btn btn-sm" onclick="loadOdList()">↻ Refresh</button>
+    </div>
+    <div class="banner amber">
+      Approving fills in any date in the "Approve from/to" range that isn't already
+      marked present — it never overwrites an existing mark. Narrow that range before
+      approving to grant fewer days than were requested.
+    </div>
+    <div class="row-inline" style="align-items:flex-end;margin-bottom:6px;">
+      <div style="flex:0 1 220px;"><label class="field-label">Max OD days before a request is flagged</label>
+        <input type="number" id="odCapInput" min="1" step="1" placeholder="e.g. 3"></div>
+      <div style="flex:0 0 auto;"><button class="btn btn-ghost btn-sm" onclick="saveOdCap()">Save</button></div>
+    </div>
+    <div id="odCapStatus"></div>
+    <div id="odList" style="margin-top:10px;"></div>
+  </div>`;
+  loadOdCap();
+  loadOdList();
+}
+async function loadOdCap(){
+  const j = await api('admin_meta', {password:PIN});
+  if (j.success && j.data.max_od_days !== undefined){
+    document.getElementById('odCapInput').value = j.data.max_od_days;
+  }
+}
+async function saveOdCap(){
+  const days = document.getElementById('odCapInput').value;
+  const statusEl = document.getElementById('odCapStatus');
+  if (!days){ statusEl.innerHTML = '<div class="banner red">Enter a number of days.</div>'; return; }
+  const j = await api('admin_set_od_cap', {password:PIN, days});
+  statusEl.innerHTML = j.success
+    ? '<div class="banner green">Saved — new requests are checked against '+j.data.max_od_days+' day(s).</div>'
+    : '<div class="banner red">'+(j.message||'Could not save.')+'</div>';
+  loadOdList();
+}
+function odStatusPill_(status){
+  if (status === 'Pending') return 'btn-closed';
+  if (status === 'Approved') return 'btn-open';
+  return 'btn-delete';
+}
+async function loadOdList(){
+  const j = await api('list_od', {password:PIN});
+  const wrap = document.getElementById('odList');
+  if (!j.success){ wrap.innerHTML = '<div class="banner red">'+(j.message||'Could not load OD requests.')+'</div>'; return; }
+  if (!j.data.length){ wrap.innerHTML = '<p class="hint">No OD applications yet.</p>'; return; }
+  wrap.innerHTML = j.data.map(req => {
+    const label = req.type + (req.detail ? ': ' + req.detail : '');
+    const capNote = req.exceedsCap ? ' · <span style="color:var(--red);font-weight:600;">⚠ exceeds cap</span>' : '';
+    let actions;
+    if (req.status === 'Pending'){
+      actions = `
+        <div class="row-inline" style="margin-top:8px;">
+          <div><label class="field-label" style="margin-bottom:2px;">Approve from</label>
+            <input type="date" id="odFrom_${req.requestId}" value="${req.dateFrom}"></div>
+          <div><label class="field-label" style="margin-bottom:2px;">to</label>
+            <input type="date" id="odTo_${req.requestId}" value="${req.dateTo}"></div>
+        </div>
+        <div class="row-actions" style="margin-top:6px;">
+          <button class="pill-btn btn-open" onclick="approveOd('${req.requestId}')">✓ Approve</button>
+          <button class="pill-btn btn-delete" onclick="rejectOd('${req.requestId}')">✕ Reject</button>
+        </div>`;
+    } else if (req.status === 'Approved'){
+      const marked = (req.approvedDates && req.approvedDates.length) ? req.approvedDates.join(', ') : '(none — every day in range was already marked)';
+      actions = `<div class="row-sub" style="margin-top:6px;">Marked present for: ${marked}</div>`;
+    } else {
+      actions = req.rejectReason ? `<div class="row-sub" style="margin-top:6px;">Reason: ${req.rejectReason}</div>` : '';
+    }
+    return `
+      <div class="row" id="odRow_${req.requestId}" style="flex-direction:column;align-items:stretch;gap:4px;">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span class="row-id">${req.roll} — ${req.name}</span>
+            <div class="row-sub">${req.section} · ${label} · ${req.dateFrom} → ${req.dateTo} (${req.daysRequested} day${req.daysRequested===1?'':'s'})${capNote}</div>
+            <div class="row-sub"><a href="${req.driveUrl}" target="_blank">view application ↗</a></div>
+          </div>
+          <span class="pill-btn ${odStatusPill_(req.status)}">${req.status}</span>
+        </div>
+        ${actions}
+        <div id="odRowStatus_${req.requestId}"></div>
+      </div>`;
+  }).join('');
+}
+// Both actions lock the row's buttons BEFORE the await (not after) —
+// closing the exact window that made this look unresponsive: an Apps
+// Script POST can genuinely take several seconds (longer under concurrent
+// load — see the manual's Glossary), and with no in-between feedback a
+// faculty member naturally clicks Approve/Reject again, assuming the first
+// click didn't register. The backend already refuses a second review_od
+// on a non-Pending request (ERR-002, "already X — nothing to do"), so a
+// slipped-through double-click was never able to double-mark attendance —
+// but disabling here removes the confusing "did it even work?" moment and
+// the temptation to double-click in the first place.
+function odLockRow_(requestId, msg){
+  const row = document.getElementById('odRow_'+requestId);
+  if (row) row.querySelectorAll('button').forEach(b => b.disabled = true);
+  const statusEl = document.getElementById('odRowStatus_'+requestId);
+  if (statusEl) statusEl.innerHTML = '<div class="row-sub" style="margin-top:6px;"><span class="spinner"></span>'+msg+'</div>';
+}
+function odUnlockRowWithError_(requestId, message){
+  const row = document.getElementById('odRow_'+requestId);
+  if (row) row.querySelectorAll('button').forEach(b => b.disabled = false);
+  const statusEl = document.getElementById('odRowStatus_'+requestId);
+  if (statusEl) statusEl.innerHTML = '<div class="banner red" style="margin-top:6px;">'+message+'</div>';
+}
+async function approveOd(requestId){
+  const fromV = document.getElementById('odFrom_'+requestId).value;
+  const toV = document.getElementById('odTo_'+requestId).value;
+  if (!fromV || !toV){ alert('Pick both dates first.'); return; }
+  if (!confirm('Approve this OD? Any not-yet-marked date in the range becomes present.')) return;
+  odLockRow_(requestId, 'Approving — this can take a few seconds on Apps Script, the buttons stay locked meanwhile so it can\'t be sent twice…');
+  const j = await api('review_od', {}, 'POST', {password:PIN, requestId, decision:'Approve', approvedDateFrom:fromV, approvedDateTo:toV});
+  if (!j.success){ odUnlockRowWithError_(requestId, j.message || 'Could not approve.'); return; }
+  loadOdList();
+}
+async function rejectOd(requestId){
+  const reason = prompt('Reason for rejecting (your own record — nothing here messages the student automatically):');
+  if (reason === null) return; // Cancel — previously this still submitted the rejection with an empty reason; now it correctly aborts.
+  odLockRow_(requestId, 'Rejecting — this can take a few seconds on Apps Script, the buttons stay locked meanwhile so it can\'t be sent twice…');
+  const j = await api('review_od', {}, 'POST', {password:PIN, requestId, decision:'Reject', rejectReason:reason});
+  if (!j.success){ odUnlockRowWithError_(requestId, j.message || 'Could not reject.'); return; }
+  loadOdList();
+}
+
+/* ===================== EVENT COORDINATOR (SGIF) ===================== */
+async function unlockEvents(){
+  const pw = document.getElementById('eventPwInput').value;
+  if (!pw) return;
+  const statusEl = document.getElementById('eventUnlockStatus');
+  statusEl.innerHTML = '<span class="spinner"></span>Checking…';
+  try {
+    const r = await fetch(`${SGIF_API_URL}?action=admin_list&password=${encodeURIComponent(pw)}`);
+    const j = await r.json();
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">Wrong password.</div>'; return; }
+    EVENT_PASSWORD = pw;
+    showScreen('eventScreen');
+    renderEvents(j.data);
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not reach SGIF\'s backend.</div>';
+  }
+}
+async function loadEvents(){
+  const r = await fetch(`${SGIF_API_URL}?action=admin_list&password=${encodeURIComponent(EVENT_PASSWORD)}`);
+  const j = await r.json();
+  if (j.success) renderEvents(j.data);
+}
+function renderEvents(list){
+  const wrap = document.getElementById('eventList');
+  if (!list.length){
+    wrap.innerHTML = '<p style="color:var(--slate);font-size:13.5px;">No events registered yet.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(q => `
+    <div class="row">
+      <span class="row-id">${q.quizId}</span>
+      <div class="row-actions">
+        <button class="pill-btn ${q.status==='OPEN'?'btn-open':'btn-closed'}"
+          onclick="toggleEventStatus('${q.quizId}', '${q.status==='OPEN'?'CLOSED':'OPEN'}')">
+          ${q.status==='OPEN' ? '● OPEN — tap to close' : '○ CLOSED — tap to open'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleEventStatus(quizId, newStatus){
+  await fetch(`${SGIF_API_URL}?action=admin_set_status&password=${encodeURIComponent(EVENT_PASSWORD)}&quiz=${quizId}&status=${newStatus}`);
+  loadEvents();
+}
+</script>
+</body>
+</html>
