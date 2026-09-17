@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard | SGT University</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=Inconsolata:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --maroon-pale:#f3e3e2;
+    --amber:#a8620d; --amber-pale:#f3e8d4;
+    --red:#b3261e; --red-pale:#f6dedb;
+    --green:#2f6d3a; --green-pale:#e6f2e8;
+    --ink:#2a211c; --slate:#6b5f55; --border:#e4d9c8; --border-strong:#cdbea3;
+    --parchment:#faf6ec; --card:#fffdf8; --radius:12px;
+    --shadow:0 1px 2px rgba(50,30,20,.06), 0 4px 14px rgba(50,30,20,.06);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; padding-top:64px; background:var(--parchment); color:var(--ink);
+    font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.55; }
+  h1{font-family:'DM Serif Display',serif; font-weight:400; margin:0 0 .3em; font-size:22px;}
+  h3{font-size:15px; margin:18px 0 8px;}
+  nav.nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center;
+    justify-content:space-between; padding:12px 20px; background:rgba(250,246,236,.85);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  .nav-brand{display:flex; align-items:center; gap:10px;}
+  .nav-logo{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--maroon);}
+  .nav-name{font-weight:700; font-size:14px;}
+  .nav-sub{font-family:'Inconsolata',monospace; font-size:10.5px; color:var(--slate); text-transform:uppercase; letter-spacing:.04em;}
+  .nav-cta{color:var(--maroon-dark); text-decoration:none; font-weight:600; font-size:12.5px;}
+  .wrap{max-width:520px; margin:0 auto; padding:26px 18px 60px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; margin-bottom:16px;}
+  .eyebrow{font-family:'Inconsolata',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--maroon-dark); margin-bottom:6px;}
+  input[type=text]{width:100%; padding:13px 14px; border:1.5px solid var(--border-strong); border-radius:9px;
+    font-family:'Inconsolata',monospace; font-size:16px; margin-bottom:10px; background:#fff;}
+  .btn{width:100%;font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; border:none; border-radius:9px; padding:13px 18px; cursor:pointer;}
+  .btn-primary{background:var(--maroon); color:#fff;}
+  .btn-primary:hover{background:var(--maroon-dark);}
+  .btn:disabled{background:var(--border-strong); color:var(--slate); cursor:not-allowed;}
+  .btn-ghost{background:none; border:1.5px solid var(--border-strong); color:var(--maroon-dark);}
+  .banner{border-radius:9px; padding:12px 14px; font-size:13.5px; margin-bottom:14px;}
+  .banner.amber{background:var(--amber-pale); color:#6b4405;}
+  .banner.red{background:var(--red-pale); color:var(--red);}
+  .banner.green{background:var(--green-pale); color:var(--green);}
+  .spinner{display:inline-block; width:14px;height:14px;border:2px solid var(--border-strong); border-top-color:var(--maroon);
+    border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px; margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .meta{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); margin-bottom:14px;}
+  .tabbar{display:flex; gap:6px; margin-bottom:14px; background:var(--maroon-pale); border-radius:10px; padding:4px;}
+  .tab-btn{flex:1; border:none; background:none; padding:10px 8px; border-radius:7px; font-family:'DM Sans',sans-serif;
+    font-weight:700; font-size:13px; color:var(--maroon-dark); cursor:pointer;}
+  .tab-btn.active{background:var(--maroon); color:#fff;}
+  label.field-label{font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:6px;}
+  select, input[type=date]{width:100%; padding:12px 14px; border:1.5px solid var(--border-strong);
+    border-radius:9px; font-family:'DM Sans',sans-serif; font-size:14.5px; margin-bottom:10px; background:#fff; color:var(--ink);}
+  table.export-table{width:100%; border-collapse:collapse; font-family:'Inconsolata',monospace; font-size:12.5px; margin-top:10px;}
+  table.export-table th, table.export-table td{border-bottom:1px solid var(--border); padding:6px 8px; text-align:left;}
+  table.export-table th{color:var(--slate); font-weight:600;}
+  .hint{font-size:12px;color:var(--slate);margin-top:4px;}
+  .stat-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+  .stat{flex:1 1 100px; background:var(--maroon-pale); border-radius:9px; padding:10px 12px; text-align:center;}
+  .stat-num{font-family:'DM Serif Display',serif; font-size:22px; color:var(--maroon-dark);}
+  .stat-lbl{font-size:10.5px; color:var(--slate); text-transform:uppercase; letter-spacing:.03em; margin-top:2px;}
+  .switch-link{display:block; text-align:center; font-size:12px; color:var(--slate); margin-top:-6px; margin-bottom:14px; cursor:pointer; text-decoration:underline;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">
+    <img class="nav-logo" src="KP_Singh.png" alt="K.P. Singh"/>
+    <div>
+      <div class="nav-name">K.P. Singh</div>
+      <div class="nav-sub" id="navSub">SGT University · Student Dashboard</div>
+    </div>
+  </div>
+  <a class="nav-cta" href="https://kpsingh.in" target="_blank">kpsingh.in ↗</a>
+</nav>
+<div class="wrap">
+  <div class="card" id="verifyCard">
+    <div class="eyebrow">Student Dashboard</div>
+    <h1 id="courseTitle">Loading…</h1>
+    <div id="banner"></div>
+    <label class="field-label">Registration / Roll Number</label>
+    <input type="text" id="rollInput" placeholder="Registration / Roll Number" autocomplete="off">
+    <label class="field-label">Name (as on the roster)</label>
+    <input type="text" id="nameInput" placeholder="Your full name" autocomplete="off">
+    <button class="btn btn-primary" id="verifyBtn" onclick="verifyAndEnter()" disabled>Continue</button>
+  </div>
+
+  <div id="dash" style="display:none;">
+    <div class="card" style="padding:16px 22px;">
+      <div class="meta" id="studentMeta" style="margin-bottom:10px;"></div>
+      <a class="btn btn-primary" id="markLink" href="#" style="display:block; text-align:center; text-decoration:none; box-sizing:border-box;">📍 Mark Attendance / Apply for OD ↗</a>
+    </div>
+    <span class="switch-link" onclick="switchStudent()">Not you? Switch student</span>
+
+    <div class="tabbar">
+      <button class="tab-btn active" id="tabBtn_attendance" onclick="showTab('attendance')">Attendance</button>
+      <button class="tab-btn" id="tabBtn_marks" onclick="showTab('marks')">Marks</button>
+      <button class="tab-btn" id="tabBtn_submissions" onclick="showTab('submissions')">Submissions</button>
+    </div>
+
+    <div class="card" id="tab_attendance">
+      <h1 style="font-size:18px;">My Attendance</h1>
+      <div id="attOut"></div>
+    </div>
+
+    <div class="card" id="tab_marks" style="display:none;">
+      <h1 style="font-size:18px;">My Marks</h1>
+      <div id="marksOut"></div>
+    </div>
+
+    <div class="card" id="tab_submissions" style="display:none;">
+      <h1 style="font-size:18px;">Submissions</h1>
+      <p class="hint">Paste the link to your Drive once — reuse the same link for every submission all
+        semester. Write exactly what you're submitting in the description, the way your instructor
+        tells you (e.g. "TA — Unit 3" or "Lab 6 report"), so it's clear what to look for inside your
+        Drive. Submitting again just adds a new dated entry — it never erases an earlier one.</p>
+      <label class="field-label">Type</label>
+      <select id="subType">
+        <option value="Assignment">Assignment</option>
+        <option value="Lab Submission">Lab Submission</option>
+        <option value="Presentation">Presentation</option>
+        <option value="Other">Other</option>
+      </select>
+      <label class="field-label">Description (what you're submitting, as instructed)</label>
+      <input type="text" id="subTitle" placeholder="e.g. TA — Unit 3, or Lab 6 report">
+      <label class="field-label">Your Drive link</label>
+      <input type="text" id="subDriveUrl" placeholder="https://drive.google.com/...">
+      <button class="btn btn-primary" id="subSubmitBtn" onclick="submitSubmission()">Submit</button>
+      <div id="subSubmitStatus"></div>
+      <h3>Your submissions so far</h3>
+      <div id="subListOut"></div>
+    </div>
+  </div>
+</div>
+<script>
+// Same short-link course resolution as attendance.html/faculty_dashboard.html —
+// this page only ever needs "?course=<courseId>" (e.g. "?course=intro-ai"),
+// resolved against courses.json for the real execUrl/courseName, so the
+// backend URL is never exposed and one shared link works for a whole course.
+const params = new URLSearchParams(window.location.search);
+const COURSE_PARAM = params.get('course') || '';
+let API_URL = '';
+let COURSE_LABEL = '';
+let STUDENT = null; // {roll, name, section} once verified — kept in memory for this page load only, never persisted
+
+function banner(html, cls){
+  document.getElementById('banner').innerHTML = html ? `<div class="banner ${cls}">${html}</div>` : '';
+}
+
+// See attendance.html's identical helper for why this exists: Apps Script's
+// /exec redirect can come back as an HTML page instead of JSON inside some
+// in-app browsers (WhatsApp/Instagram), which otherwise breaks r.json() with
+// a cryptic "Unexpected token '<'".
+async function parseJsonSafe(r, backendCall){
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch (e) {
+    const hint = backendCall
+      ? ' If you opened this link inside WhatsApp, Instagram, or a similar app, try again in Chrome or Safari directly (tap ⋮ or the share icon → "Open in browser") — that’s the most common cause of this.'
+      : '';
+    throw new Error('Got an unexpected reply from the server.' + hint);
+  }
+}
+async function fetchJsonWithRetry(url, opts, backendCall, onRetry, tries){
+  tries = tries || 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= tries; attempt++){
+    try {
+      const r = await fetch(url, opts);
+      return await parseJsonSafe(r, backendCall);
+    } catch (e) {
+      lastErr = e;
+      if (attempt < tries){
+        if (onRetry) onRetry(attempt, tries);
+        await new Promise(res => setTimeout(res, 900 * attempt));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+async function resolveCourse(){
+  if (!COURSE_PARAM){
+    banner('This link is missing course info — ask your faculty for the correct link.', 'red');
+    return false;
+  }
+  try {
+    const list = await fetchJsonWithRetry('courses.json', undefined, false, null, 2);
+    const entry = list.find(c => c.courseId === COURSE_PARAM);
+    if (!entry || !entry.execUrl || entry.execUrl.indexOf('PASTE_EXEC_URL') === 0){
+      banner('This course link isn’t set up yet — ask your faculty to check courses.json.', 'red');
+      return false;
+    }
+    API_URL = entry.execUrl;
+    COURSE_LABEL = entry.courseName;
+    return true;
+  } catch(e) {
+    banner(e.message || 'Could not load course info. Check your connection and try again.', 'red');
+    return false;
+  }
+}
+
+async function init(){
+  const ok = await resolveCourse();
+  document.getElementById('courseTitle').textContent = COURSE_LABEL || 'Student Dashboard';
+  document.getElementById('navSub').textContent = 'SGT University · ' + (COURSE_LABEL || 'Student Dashboard');
+  if (!ok) return;
+  document.getElementById('verifyBtn').disabled = false;
+}
+init();
+
+// Roll + name is a light check, not real login — it catches a typo or an
+// accidental wrong roll, not someone deliberately impersonating a
+// classmate. Re-verified server-side on every single call below (never
+// trusted from this response alone), consistent with how the rest of this
+// platform works today (attendance marking / OD applications also take a
+// roll number on trust). K.P. is holding a stronger check (roll + DOB or
+// phone) until a sheet with that data exists — see the manual.
+async function verifyAndEnter(){
+  const roll = document.getElementById('rollInput').value.trim();
+  const name = document.getElementById('nameInput').value.trim();
+  const btn = document.getElementById('verifyBtn');
+  if (!roll || !name){ banner('Enter both your roll number and your name.', 'red'); return; }
+  btn.disabled = true;
+  banner('<span class="spinner"></span>Checking…', 'amber');
+  try {
+    const j = await fetchJsonWithRetry(
+      `${API_URL}?action=student_verify&roll=${encodeURIComponent(roll)}&name=${encodeURIComponent(name)}`,
+      undefined, true,
+      (n, total) => banner(`<span class="spinner"></span>Server’s busy, retrying… (${n}/${total})`, 'amber')
+    );
+    btn.disabled = false;
+    if (!j.success){ banner(j.message, 'red'); return; }
+    STUDENT = j.data;
+    banner('', '');
+    enterDashboard();
+  } catch(e) {
+    banner(e.message || 'Something went wrong.', 'red');
+    btn.disabled = false;
+  }
+}
+
+function enterDashboard(){
+  document.getElementById('verifyCard').style.display = 'none';
+  document.getElementById('dash').style.display = '';
+  document.getElementById('studentMeta').textContent = `${STUDENT.roll} — ${STUDENT.name} · Section ${STUDENT.section}`;
+  document.getElementById('markLink').href = `attendance.html?course=${encodeURIComponent(COURSE_PARAM)}&section=${encodeURIComponent(STUDENT.section)}`;
+  LOADED = {};
+  showTab('attendance');
+}
+
+function switchStudent(){
+  STUDENT = null;
+  document.getElementById('rollInput').value = '';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('verifyCard').style.display = '';
+}
+
+let LOADED = {};
+function showTab(which){
+  ['attendance','marks','submissions'].forEach(t => {
+    document.getElementById('tab_'+t).style.display = (t === which) ? '' : 'none';
+    document.getElementById('tabBtn_'+t).classList.toggle('active', t === which);
+  });
+  if (!LOADED[which]){
+    LOADED[which] = true;
+    if (which === 'attendance') loadAttendance();
+    else if (which === 'marks') loadMarks();
+    else loadSubmissions();
+  }
+}
+
+async function loadAttendance(){
+  const el = document.getElementById('attOut');
+  el.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  try {
+    const j = await fetchJsonWithRetry(
+      `${API_URL}?action=student_attendance&roll=${encodeURIComponent(STUDENT.roll)}&name=${encodeURIComponent(STUDENT.name)}`,
+      undefined, true
+    );
+    if (!j.success){ el.innerHTML = `<div class="banner red">${j.message}</div>`; return; }
+    const d = j.data;
+    let html = `<div class="stat-row">
+        <div class="stat"><div class="stat-num">${d.pct}%</div><div class="stat-lbl">Attendance</div></div>
+        <div class="stat"><div class="stat-num">${d.attended}/${d.held}</div><div class="stat-lbl">Attended / Held</div></div>
+        <div class="stat"><div class="stat-num">${d.bonusAttended}</div><div class="stat-lbl">Bonus sessions</div></div>
+      </div>`;
+    if (!d.days || !d.days.length){
+      html += '<p class="hint">No sessions logged yet.</p>';
+    } else {
+      html += '<table class="export-table"><tr><th>Date</th><th>Type</th><th>Status</th></tr>' +
+        d.days.slice().reverse().map(x => `<tr><td>${x.date}</td><td>${x.type}</td><td>${x.present ? '✓ Present' : '— Absent'}</td></tr>`).join('') +
+        '</table>';
+    }
+    html += '<p class="hint">Scheduled and Short sessions count toward the % above; Remedial and Extra never count against you — showing up only ever adds to the Bonus count.</p>';
+    html += '<p class="hint">A "will I still be above X% by a date" prediction isn\'t built yet — it needs the semester holiday calendar and your section\'s timetable to be accurate, and your faculty hasn\'t added those yet.</p>';
+    el.innerHTML = html;
+  } catch(e){ el.innerHTML = `<div class="banner red">${e.message || 'Could not load.'}</div>`; }
+}
+
+async function loadMarks(){
+  const el = document.getElementById('marksOut');
+  el.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  try {
+    const j = await fetchJsonWithRetry(
+      `${API_URL}?action=student_marks&roll=${encodeURIComponent(STUDENT.roll)}&name=${encodeURIComponent(STUDENT.name)}`,
+      undefined, true
+    );
+    if (!j.success){ el.innerHTML = `<div class="banner red">${j.message}</div>`; return; }
+    const d = j.data;
+    if (!d.quizzes.length){ el.innerHTML = '<p class="hint">No quizzes attempted yet.</p>'; return; }
+    el.innerHTML = `<div class="stat-row"><div class="stat"><div class="stat-num">${d.average}%</div><div class="stat-lbl">Average across ${d.quizzes.length} quiz${d.quizzes.length===1?'':'zes'}</div></div></div>` +
+      '<table class="export-table"><tr><th>Quiz</th><th>%</th><th>Grade</th><th>Result</th></tr>' +
+      d.quizzes.map(q => `<tr><td>${q.quizId}</td><td>${q.percentage}%</td><td>${q.grade}</td><td>${q.passed}</td></tr>`).join('') +
+      '</table>';
+  } catch(e){ el.innerHTML = `<div class="banner red">${e.message || 'Could not load.'}</div>`; }
+}
+
+async function loadSubmissions(){
+  const el = document.getElementById('subListOut');
+  el.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  try {
+    const j = await fetchJsonWithRetry(
+      `${API_URL}?action=student_submissions&roll=${encodeURIComponent(STUDENT.roll)}&name=${encodeURIComponent(STUDENT.name)}`,
+      undefined, true
+    );
+    if (!j.success){ el.innerHTML = `<div class="banner red">${j.message}</div>`; return; }
+    const list = j.data;
+    // Prefill the Drive link from the most recent submission, so a student
+    // who already pasted it once this course doesn't have to find and
+    // paste it again for every later submission — see the manual's note
+    // on why this is looked up server-side rather than remembered in the
+    // browser (works across devices, survives a cleared browser).
+    if (list.length && list[0].driveUrl){
+      document.getElementById('subDriveUrl').value = list[0].driveUrl;
+    }
+    el.innerHTML = list.length
+      ? '<table class="export-table"><tr><th>When</th><th>Type</th><th>Description</th></tr>' +
+        list.map(s => `<tr><td>${new Date(s.timestamp).toLocaleString()}</td><td>${s.type}</td><td>${s.title}</td></tr>`).join('') +
+        '</table>'
+      : '<p class="hint">No submissions yet.</p>';
+  } catch(e){ el.innerHTML = `<div class="banner red">${e.message || 'Could not load.'}</div>`; }
+}
+
+async function submitSubmission(){
+  const type = document.getElementById('subType').value;
+  const title = document.getElementById('subTitle').value.trim();
+  const driveUrl = document.getElementById('subDriveUrl').value.trim();
+  const btn = document.getElementById('subSubmitBtn');
+  const statusEl = document.getElementById('subSubmitStatus');
+  if (!title){ statusEl.innerHTML = '<div class="banner red">Describe what you\'re submitting, the way your instructor told you to.</div>'; return; }
+  if (!driveUrl){ statusEl.innerHTML = '<div class="banner red">Paste your Drive link.</div>'; return; }
+  btn.disabled = true;
+  statusEl.innerHTML = '<span class="spinner"></span>Submitting…';
+  try {
+    const j = await fetchJsonWithRetry(
+      API_URL,
+      { method: 'POST', body: JSON.stringify({
+          action: 'submit_submission', roll: STUDENT.roll, name: STUDENT.name, type, title, driveUrl,
+        }) },
+      true, null, 1  // fires once only — a retried resubmit would create a second logged entry
+    );
+    btn.disabled = false;
+    if (!j.success){ statusEl.innerHTML = `<div class="banner red">${j.message}</div>`; return; }
+    statusEl.innerHTML = '<div class="banner green">Submitted.</div>';
+    document.getElementById('subTitle').value = '';
+    LOADED.submissions = false;
+    loadSubmissions();
+  } catch(e) {
+    btn.disabled = false;
+    statusEl.innerHTML = `<div class="banner red">${e.message || 'Something went wrong.'}</div>`;
+  }
+}
+</script>
+</body>
+</html>
