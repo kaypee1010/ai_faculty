@@ -63,7 +63,23 @@
   .stat{flex:1 1 100px; background:var(--maroon-pale); border-radius:9px; padding:10px 12px; text-align:center;}
   .stat-num{font-family:'DM Serif Display',serif; font-size:22px; color:var(--maroon-dark);}
   .stat-lbl{font-size:10.5px; color:var(--slate); text-transform:uppercase; letter-spacing:.03em; margin-top:2px;}
-  .switch-link{display:block; text-align:center; font-size:12px; color:var(--slate); margin-top:-6px; margin-bottom:14px; cursor:pointer; text-decoration:underline;}
+  .switch-link{display:block; text-align:center; font-size:12px; color:var(--slate); margin-top:4px; cursor:pointer; text-decoration:underline;}
+
+  /* ---- Left-hand nav panel (Sep 2026) ---- */
+  .stu-shell{display:flex; gap:20px; max-width:900px; margin:0 auto; padding:26px 18px 60px; align-items:flex-start;}
+  .stu-sidebar{flex:0 0 220px; position:sticky; top:78px; display:flex; flex-direction:column; gap:8px;}
+  .stu-main{flex:1 1 auto; min-width:0;}
+  @media(max-width:720px){
+    .stu-shell{flex-direction:column; padding:18px 14px 50px;}
+    .stu-sidebar{flex:0 0 auto; width:100%; position:static; flex-direction:row; flex-wrap:wrap;}
+    .stu-nav-link{flex:1 1 auto;}
+  }
+  .stu-nav-link{ display:block; text-align:left; text-decoration:none; font-family:'DM Sans',sans-serif;
+    font-weight:700; font-size:13.5px; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-strong);
+    background:var(--card); color:var(--ink); cursor:pointer; }
+  .stu-nav-link:hover{border-color:var(--maroon);}
+  .stu-nav-link.active{background:var(--maroon); color:#fff; border-color:var(--maroon);}
+  .stu-meta{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); padding:2px 2px 6px;}
 </style>
 </head>
 <body>
@@ -77,7 +93,7 @@
   </div>
   <a class="nav-cta" href="https://kpsingh.in" target="_blank">kpsingh.in ↗</a>
 </nav>
-<div class="wrap">
+<div class="wrap" id="verifyWrap">
   <div class="card" id="verifyCard">
     <div class="eyebrow">Student Dashboard</div>
     <h1 id="courseTitle">Loading…</h1>
@@ -88,20 +104,18 @@
     <input type="text" id="nameInput" placeholder="Your full name" autocomplete="off">
     <button class="btn btn-primary" id="verifyBtn" onclick="verifyAndEnter()" disabled>Continue</button>
   </div>
+</div>
 
-  <div id="dash" style="display:none;">
-    <div class="card" style="padding:16px 22px;">
-      <div class="meta" id="studentMeta" style="margin-bottom:10px;"></div>
-      <a class="btn btn-primary" id="markLink" href="#" style="display:block; text-align:center; text-decoration:none; box-sizing:border-box;">📍 Mark Attendance / Apply for OD ↗</a>
-    </div>
+<div id="dash" class="stu-shell" style="display:none;">
+  <aside class="stu-sidebar">
+    <div class="stu-meta" id="studentMeta"></div>
+    <a class="stu-nav-link" id="markLink" href="#" target="_blank">📍 Mark Attendance / Apply OD ↗</a>
+    <button class="stu-nav-link" id="navBtn_attendance" onclick="showTab('attendance')">📋 View Attendance</button>
+    <button class="stu-nav-link" id="navBtn_marks" onclick="showTab('marks')">🎯 View Marks</button>
+    <button class="stu-nav-link" id="navBtn_submissions" onclick="showTab('submissions')">📝 Make Submissions</button>
     <span class="switch-link" onclick="switchStudent()">Not you? Switch student</span>
-
-    <div class="tabbar">
-      <button class="tab-btn active" id="tabBtn_attendance" onclick="showTab('attendance')">Attendance</button>
-      <button class="tab-btn" id="tabBtn_marks" onclick="showTab('marks')">Marks</button>
-      <button class="tab-btn" id="tabBtn_submissions" onclick="showTab('submissions')">Submissions</button>
-    </div>
-
+  </aside>
+  <main class="stu-main">
     <div class="card" id="tab_attendance">
       <h1 style="font-size:18px;">My Attendance</h1>
       <div id="attOut"></div>
@@ -134,7 +148,7 @@
       <h3>Your submissions so far</h3>
       <div id="subListOut"></div>
     </div>
-  </div>
+  </main>
 </div>
 <script>
 // Same short-link course resolution as attendance.html/faculty_dashboard.html —
@@ -245,8 +259,8 @@ async function verifyAndEnter(){
 }
 
 function enterDashboard(){
-  document.getElementById('verifyCard').style.display = 'none';
-  document.getElementById('dash').style.display = '';
+  document.getElementById('verifyWrap').style.display = 'none';
+  document.getElementById('dash').style.display = 'flex';
   document.getElementById('studentMeta').textContent = `${STUDENT.roll} — ${STUDENT.name} · Section ${STUDENT.section}`;
   document.getElementById('markLink').href = `attendance.html?course=${encodeURIComponent(COURSE_PARAM)}&section=${encodeURIComponent(STUDENT.section)}`;
   LOADED = {};
@@ -258,14 +272,14 @@ function switchStudent(){
   document.getElementById('rollInput').value = '';
   document.getElementById('nameInput').value = '';
   document.getElementById('dash').style.display = 'none';
-  document.getElementById('verifyCard').style.display = '';
+  document.getElementById('verifyWrap').style.display = '';
 }
 
 let LOADED = {};
 function showTab(which){
   ['attendance','marks','submissions'].forEach(t => {
     document.getElementById('tab_'+t).style.display = (t === which) ? '' : 'none';
-    document.getElementById('tabBtn_'+t).classList.toggle('active', t === which);
+    document.getElementById('navBtn_'+t).classList.toggle('active', t === which);
   });
   if (!LOADED[which]){
     LOADED[which] = true;
