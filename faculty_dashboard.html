@@ -453,6 +453,9 @@ async function renderAttendanceTile(){
     return;
   }
   let html = '<div class="card"><h2 style="font-size:18px;">Attendance</h2>';
+  html += '<p class="hint">🎓 Share this once with your students — one link works for the whole course, ' +
+          'they enter their own roll+name to see their own attendance, marks, and submissions: ' +
+          '<a href="student.html?course='+encodeURIComponent(CURRENT.courseId)+'" target="_blank">student.html?course='+CURRENT.courseId+'</a></p>';
   html += '<div id="attCards"></div>';
   html += '<h3 style="font-size:15px;margin-top:18px;">ERP export</h3>';
   html += '<button class="btn btn-ghost btn-sm" onclick="loadErpExport()">↻ Load export</button>';
@@ -737,7 +740,7 @@ async function renderEvaluationTile(){
         <div class="row-inline">
           <div><label class="field-label">Roll *</label><input type="text" id="subRoll" placeholder="e.g. 230101"></div>
           <div><label class="field-label">Type *</label><select id="subType">
-            <option value="Assignment">Assignment</option><option value="Lab">Lab</option>
+            <option value="Assignment">Assignment</option><option value="Lab Submission">Lab Submission</option>
             <option value="Presentation">Presentation</option><option value="Other">Other</option>
           </select></div>
           <div style="flex:1 1 200px;"><label class="field-label">Title *</label><input type="text" id="subTitle" placeholder="e.g. Assignment 3"></div>
