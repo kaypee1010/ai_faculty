@@ -364,6 +364,7 @@ function renderTiles(){
     {id:'quiz', name:'Quiz & Assessment', desc:'Open/close · review release'},
     {id:'od', name:'OD Requests', desc:'Review & approve Official Duty'},
     {id:'syllabus', name:'Upload Syllabus', desc:'Course syllabus file'},
+    {id:'evaluation', name:'Evaluation & Reports', desc:'Attendance %, marks, submissions'},
     {id:'sheet', name:'Marks & Attendance Sheet', desc:'Open the Google Sheet ↗'},
   ];
   document.getElementById('tileGrid').innerHTML = tiles.map(t =>
@@ -440,6 +441,7 @@ function openTile(id){
   else if (id === 'syllabus') renderContentTile('Syllabus', 'Upload Syllabus');
   else if (id === 'quiz') renderQuizTile();
   else if (id === 'od') renderOdTile();
+  else if (id === 'evaluation') renderEvaluationTile();
 }
 
 /* ---------- ATTENDANCE TILE ---------- */
@@ -483,6 +485,30 @@ async function renderAttendanceTile(){
         <a class="btn-ghost btn btn-sm" href="attendance.html?course=${encodeURIComponent(CURRENT.courseId)}&section=${encodeURIComponent(s)}" target="_blank">Open marking page ↗</a>
       </div>
     </div>
+    <div class="card" id="attOpenForm_${s}" style="display:none;margin:-4px 0 12px;padding:12px 14px;background:#f8f9fb;border-radius:8px;">
+      <div class="row-inline">
+        <div>
+          <label class="field-label">Session type *</label>
+          <select id="attOpenType_${s}">
+            <option value="" disabled selected>Select type…</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Short">Short</option>
+            <option value="Remedial">Remedial</option>
+            <option value="Extra">Extra</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Description (optional)</label>
+          <input type="text" id="attOpenDesc_${s}" placeholder="e.g. makeup for Sep 10" maxlength="200">
+        </div>
+        <div style="flex:0 0 auto;display:flex;gap:8px;align-items:flex-end;">
+          <button class="btn btn-primary btn-sm" id="attOpenConfirmBtn_${s}" onclick="confirmOpenAttendance('${s}')">Open</button>
+          <button class="btn btn-ghost btn-sm" id="attOpenCancelBtn_${s}" onclick="cancelOpenAttendance('${s}')">Cancel</button>
+        </div>
+      </div>
+      <div class="hint" style="color:#c0392b;" id="attOpenErr_${s}"></div>
+      <p class="hint">Scheduled and Short count normally toward attendance %. Remedial and Extra are bonus-only — attending helps, missing is never held against a student.</p>
+    </div>
   `).join('');
 
   for (const s of sections) refreshAttendanceStatus(s);
@@ -495,35 +521,77 @@ async function refreshAttendanceStatus(section){
   const open = j.data.status === 'OPEN';
   btn.className = 'pill-btn ' + (open ? 'btn-open' : 'btn-closed');
   btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
-  sub.textContent = 'today: ' + j.data.dateKey;
+  let label = 'today: ' + j.data.dateKey;
+  if (open && j.data.type) label += ' · ' + j.data.type + (j.data.description ? ' — ' + j.data.description : '');
+  sub.textContent = label;
 }
-// (Sep 2026) This used to await attendance_toggle, then await a SECOND,
-// separate attendance_status call just to redraw the same button — two
-// full Apps Script round-trips back to back, with no visual feedback in
-// between, which is what made a toggle feel like it had frozen. Fixed:
-// disable + show a spinner the instant it's clicked (so it never looks
-// dead), and use the status the toggle call already returns to update the
-// button immediately — one round-trip, not two. refreshAttendanceStatus()
-// still runs after, but only in the background to refresh the "today: …"
-// date label; it no longer blocks the button.
-async function toggleAttendance(section){
+// v3.11: opening attendance is no longer a single click on the pill — a
+// session Type is mandatory (Scheduled/Short/Remedial/Extra; the backend
+// enforces this too, see handleAttendanceToggle_, so an old cached client
+// can't sneak an open through without one). Clicking the pill while CLOSED
+// just reveals an inline form (never a native prompt()/confirm() — those
+// can't be reliably cancelled, which is exactly the bug the OD reject flow
+// had, see the Sep 2026 fix note on odUnlockRowWithError_) with an explicit
+// Cancel and a Confirm/"Open" button. Closing stays a single click, same
+// lock-before-await pattern as before.
+function toggleAttendance(section){
+  const btn = document.getElementById('attBtn_'+section);
+  const isOpen = btn.textContent.includes('OPEN');
+  if (isOpen) { closeAttendance(section); return; }
+  const form = document.getElementById('attOpenForm_'+section);
+  if (form) form.style.display = 'block';
+}
+function cancelOpenAttendance(section){
+  const form = document.getElementById('attOpenForm_'+section);
+  if (form) form.style.display = 'none';
+  const errEl = document.getElementById('attOpenErr_'+section);
+  if (errEl) errEl.textContent = '';
+}
+async function confirmOpenAttendance(section){
+  const typeSel = document.getElementById('attOpenType_'+section);
+  const descInp = document.getElementById('attOpenDesc_'+section);
+  const errEl = document.getElementById('attOpenErr_'+section);
+  const type = typeSel.value;
+  if (!type){
+    errEl.textContent = 'Pick a session type before opening.';
+    return;
+  }
+  errEl.textContent = '';
+  const confirmBtn = document.getElementById('attOpenConfirmBtn_'+section);
+  const cancelBtn = document.getElementById('attOpenCancelBtn_'+section);
+  const prevHtml = confirmBtn.innerHTML;
+  confirmBtn.disabled = true; cancelBtn.disabled = true; typeSel.disabled = true; descInp.disabled = true;
+  confirmBtn.innerHTML = '<span class="spinner"></span>Opening…';
+  const j = await api('attendance_toggle', {password:PIN, section, status:'OPEN', type, description: descInp.value});
+  confirmBtn.disabled = false; cancelBtn.disabled = false; typeSel.disabled = false; descInp.disabled = false;
+  confirmBtn.innerHTML = prevHtml;
+  if (!j.success){
+    errEl.textContent = 'error: ' + j.message;
+    return; // form stays open with the chosen type/description intact — the open didn't actually happen
+  }
+  const btn = document.getElementById('attBtn_'+section);
+  btn.className = 'pill-btn btn-open';
+  btn.textContent = '● OPEN — tap to close';
+  document.getElementById('attOpenForm_'+section).style.display = 'none';
+  typeSel.value = ''; descInp.value = '';
+  refreshAttendanceStatus(section);
+}
+async function closeAttendance(section){
   const btn = document.getElementById('attBtn_'+section);
   const sub = document.getElementById('attSub_'+section);
-  const cur = btn.textContent.includes('OPEN');
   const prevHtml = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>…';
-  const j = await api('attendance_toggle', {password:PIN, section, status: cur ? 'CLOSED':'OPEN'});
+  const j = await api('attendance_toggle', {password:PIN, section, status:'CLOSED'});
   btn.disabled = false;
   if (!j.success){
     btn.innerHTML = prevHtml;
     if (sub) sub.textContent = 'error: ' + j.message;
     return; // don't refresh — the toggle didn't actually happen (e.g. wrong password)
   }
-  const open = j.data.status === 'OPEN';
-  btn.className = 'pill-btn ' + (open ? 'btn-open' : 'btn-closed');
-  btn.textContent = open ? '● OPEN — tap to close' : '○ CLOSED — tap to open';
-  refreshAttendanceStatus(section); // background refresh of the date sub-label only
+  btn.className = 'pill-btn btn-closed';
+  btn.textContent = '○ CLOSED — tap to open';
+  refreshAttendanceStatus(section);
 }
 async function loadErpExport(){
   const j = await api('attendance_report', {password:PIN});
@@ -616,6 +684,196 @@ function fallbackCopy_(text, done){
   document.body.appendChild(ta); ta.select();
   try { document.execCommand('copy'); done(); } catch(e) {}
   document.body.removeChild(ta);
+}
+
+/* ---------- EVALUATION & REPORTS TILE (v3.11, new) ----------
+   Every panel here calls a live, read-only endpoint (see Code-v3.11.gs's
+   "EVALUATION & REPORTS" header note for why this is deliberately NOT a
+   materialized sheet) — each Load click is its own round-trip, nothing is
+   cached beyond the lifetime of the open panel, so it's always current. */
+function evalSectionOptions_(){
+  const sections = (CURRENT.sections || '').split(',').map(s=>s.trim()).filter(Boolean);
+  return sections.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+async function renderEvaluationTile(){
+  const body = document.getElementById('tileBody');
+  const secOpts = evalSectionOptions_();
+  body.innerHTML = `<div class="card">
+    <h2 style="font-size:18px;">Evaluation &amp; Reports</h2>
+    <p class="hint">Everything below is read live off the Sheet each time you click Load — nothing is duplicated or pre-computed, so it's always current.</p>
+
+    <details class="seed-details" open>
+      <summary>View Attendance</summary>
+      <div class="seed-body">
+        <div class="row-inline" style="align-items:flex-end;">
+          <div><label class="field-label">Section</label>
+            <select id="evAttSection"><option value="">All sections</option>${secOpts}</select></div>
+          <div><label class="field-label">From (optional)</label><input type="date" id="evAttFrom"></div>
+          <div><label class="field-label">To (optional)</label><input type="date" id="evAttTo"></div>
+          <div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="loadEvalAttendance()">Load</button></div>
+        </div>
+        <p class="hint">Remedial/Extra sessions never enter Held/Attended/% — they only add to Bonus when a student shows up.</p>
+        <div id="evAttOut"></div>
+      </div>
+    </details>
+
+    <details class="seed-details">
+      <summary>View Marks</summary>
+      <div class="seed-body">
+        <div class="row-inline" style="align-items:flex-end;">
+          <div><label class="field-label">Quiz *</label><select id="evMarksQuiz"><option value="">Loading…</option></select></div>
+          <div><label class="field-label">Below % (optional)</label><input type="number" id="evMarksBelow" min="0" max="100" placeholder="e.g. 40"></div>
+          <div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="loadEvalMarks()">Load</button></div>
+        </div>
+        <p class="hint">Sorted worst-first — the students most likely to need a follow-up are at the top.</p>
+        <div id="evMarksOut"></div>
+      </div>
+    </details>
+
+    <details class="seed-details">
+      <summary>Submissions</summary>
+      <div class="seed-body">
+        <p class="hint">Faculty-logged for now — students don't have their own upload flow yet.</p>
+        <div class="row-inline">
+          <div><label class="field-label">Roll *</label><input type="text" id="subRoll" placeholder="e.g. 230101"></div>
+          <div><label class="field-label">Type *</label><select id="subType">
+            <option value="Assignment">Assignment</option><option value="Lab">Lab</option>
+            <option value="Presentation">Presentation</option><option value="Other">Other</option>
+          </select></div>
+          <div style="flex:1 1 200px;"><label class="field-label">Title *</label><input type="text" id="subTitle" placeholder="e.g. Assignment 3"></div>
+        </div>
+        <div class="row-inline">
+          <div><label class="field-label">File (optional)</label><input type="file" id="subFile"></div>
+          <div><label class="field-label">Marks (optional)</label><input type="text" id="subMarks" style="max-width:100px;"></div>
+          <div style="flex:1 1 200px;"><label class="field-label">Remarks (optional)</label><input type="text" id="subRemarks"></div>
+          <div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="logSubmission()">Log</button></div>
+        </div>
+        <div id="subLogStatus"></div>
+        <div class="row-inline" style="margin-top:12px;">
+          <div><label class="field-label">Filter — roll (optional)</label><input type="text" id="subFilterRoll"></div>
+          <div><label class="field-label">Filter — section (optional)</label><select id="subFilterSection"><option value="">All sections</option>${secOpts}</select></div>
+          <div style="flex:0 0 auto;"><button class="btn btn-ghost btn-sm" onclick="loadSubmissionsList()">↻ Refresh list</button></div>
+        </div>
+        <div id="subListOut"></div>
+      </div>
+    </details>
+
+    <details class="seed-details">
+      <summary>Evaluation (combined)</summary>
+      <div class="seed-body">
+        <p class="hint">Attendance % + quiz average (across every quiz they have a response for) + submissions count, per student — one view instead of three Sheet tabs.</p>
+        <div class="row-inline" style="align-items:flex-end;">
+          <div><label class="field-label">Section</label><select id="evCombSection"><option value="">All sections</option>${secOpts}</select></div>
+          <div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="loadEvalCombined()">Load</button></div>
+        </div>
+        <div id="evCombOut"></div>
+      </div>
+    </details>
+  </div>`;
+  loadEvalQuizList_();
+}
+async function loadEvalQuizList_(){
+  const sel = document.getElementById('evMarksQuiz');
+  const j = await api('admin_list', {password:PIN});
+  if (!j.success || !j.data.length){ sel.innerHTML = '<option value="">No quizzes yet</option>'; return; }
+  sel.innerHTML = '<option value="" disabled selected>Select a quiz…</option>' +
+    j.data.map(q => `<option value="${q.quizId}">${q.quizId}</option>`).join('');
+}
+async function loadEvalAttendance(){
+  const section = document.getElementById('evAttSection').value;
+  const dateFrom = document.getElementById('evAttFrom').value;
+  const dateTo = document.getElementById('evAttTo').value;
+  const out = document.getElementById('evAttOut');
+  out.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  const params = {password:PIN};
+  if (section) params.section = section;
+  if (dateFrom) params.dateFrom = dateFrom;
+  if (dateTo) params.dateTo = dateTo;
+  const j = await api('attendance_report', params);
+  if (!j.success){ out.innerHTML = '<div class="banner red">'+j.message+'</div>'; return; }
+  if (!j.data.length){ out.innerHTML = '<p class="hint">No attendance in range.</p>'; return; }
+  out.innerHTML = '<table class="export-table"><tr><th>Roll</th><th>Name</th><th>Sec</th><th>Held</th><th>Attended</th><th>%</th><th>Bonus</th></tr>' +
+    j.data.map(r => `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.section}</td><td>${r.held}</td><td>${r.attended}</td><td>${r.pct}%</td><td>${r.bonusAttended}</td></tr>`).join('') +
+    '</table>';
+}
+async function loadEvalMarks(){
+  const quiz = document.getElementById('evMarksQuiz').value;
+  const belowPct = document.getElementById('evMarksBelow').value;
+  const out = document.getElementById('evMarksOut');
+  if (!quiz){ out.innerHTML = '<div class="banner red">Pick a quiz first.</div>'; return; }
+  out.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  const params = {password:PIN, quiz};
+  if (belowPct !== '') params.belowPct = belowPct;
+  const j = await api('get_marks_view', params);
+  if (!j.success){ out.innerHTML = '<div class="banner red">'+j.message+'</div>'; return; }
+  if (!j.data.length){ out.innerHTML = '<p class="hint">No responses match.</p>'; return; }
+  out.innerHTML = '<table class="export-table"><tr><th>Roll</th><th>Name</th><th>Sec</th><th>%</th><th>Grade</th><th>Passed</th></tr>' +
+    j.data.map(r => `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.section}</td><td>${r.percentage}%</td><td>${r.grade}</td><td>${r.passed}</td></tr>`).join('') +
+    '</table>';
+}
+async function logSubmission(){
+  const roll = document.getElementById('subRoll').value.trim();
+  const type = document.getElementById('subType').value;
+  const title = document.getElementById('subTitle').value.trim();
+  const marks = document.getElementById('subMarks').value.trim();
+  const remarks = document.getElementById('subRemarks').value.trim();
+  const fileInput = document.getElementById('subFile');
+  const statusEl = document.getElementById('subLogStatus');
+  if (!roll || !title){ statusEl.innerHTML = '<div class="banner red">Roll and Title are required.</div>'; return; }
+  statusEl.innerHTML = '<span class="spinner"></span>Logging…';
+  try {
+    const body = { password: PIN, roll, type, title, marks, remarks };
+    if (fileInput.files.length){
+      const file = fileInput.files[0];
+      body.fileName = file.name;
+      body.mimeType = file.type || 'application/octet-stream';
+      body.dataBase64 = await fileToBase64(file);
+    }
+    const j = await api('log_submission', {}, 'POST', body);
+    if (!j.success){ statusEl.innerHTML = '<div class="banner red">'+(j.message||'Could not log this submission.')+'</div>'; return; }
+    statusEl.innerHTML = '<div class="banner green">Logged.</div>';
+    document.getElementById('subRoll').value = '';
+    document.getElementById('subTitle').value = '';
+    document.getElementById('subMarks').value = '';
+    document.getElementById('subRemarks').value = '';
+    fileInput.value = '';
+    loadSubmissionsList();
+  } catch(e) {
+    statusEl.innerHTML = '<div class="banner red">Could not log this submission — check the file size (under 15MB) and try again.</div>';
+  }
+}
+async function loadSubmissionsList(){
+  const roll = document.getElementById('subFilterRoll').value.trim();
+  const section = document.getElementById('subFilterSection').value;
+  const out = document.getElementById('subListOut');
+  out.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  const params = {password:PIN};
+  if (roll) params.roll = roll;
+  if (section) params.section = section;
+  const j = await api('list_submissions', params);
+  if (!j.success){ out.innerHTML = '<div class="banner red">'+j.message+'</div>'; return; }
+  if (!j.data.length){ out.innerHTML = '<p class="hint">No submissions logged yet.</p>'; return; }
+  out.innerHTML = j.data.map(s => `
+    <div class="row">
+      <div>
+        <div class="row-id">${s.roll} — ${s.name} · ${s.title}</div>
+        <div class="row-sub">${s.type} · ${s.section}${s.marks ? ' · Marks: '+s.marks : ''}${s.remarks ? ' · '+s.remarks : ''}${s.driveUrl ? ' · <a href="'+s.driveUrl+'" target="_blank">view file ↗</a>' : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+async function loadEvalCombined(){
+  const section = document.getElementById('evCombSection').value;
+  const out = document.getElementById('evCombOut');
+  out.innerHTML = '<p class="hint"><span class="spinner"></span>Loading…</p>';
+  const params = {password:PIN};
+  if (section) params.section = section;
+  const j = await api('get_evaluation', params);
+  if (!j.success){ out.innerHTML = '<div class="banner red">'+j.message+'</div>'; return; }
+  if (!j.data.length){ out.innerHTML = '<p class="hint">No students yet.</p>'; return; }
+  out.innerHTML = '<table class="export-table"><tr><th>Roll</th><th>Name</th><th>Sec</th><th>Att%</th><th>Bonus</th><th>Quizzes</th><th>Quiz Avg%</th><th>Submissions</th></tr>' +
+    j.data.map(r => `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.section}</td><td>${r.attendancePct}%</td><td>${r.bonusAttended}</td><td>${r.quizzesTaken}</td><td>${r.quizAvgPct===null?'—':r.quizAvgPct+'%'}</td><td>${r.submissionsCount}</td></tr>`).join('') +
+    '</table>';
 }
 
 /* ---------- CONTENT TILES (Lecture / Lab / Syllabus) ----------
