@@ -33,6 +33,7 @@
     font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.55;
     transition:background .15s ease, color .15s ease; }
   h1,h2,h3{font-family:'DM Serif Display',serif; font-weight:400; margin:0 0 .3em;}
+  a{color:var(--maroon-dark);} a:hover{color:var(--maroon);}
   .screen{display:none;} .screen.active{display:block;}
   nav.nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center;
     justify-content:space-between; padding:12px 20px; background:var(--nav-bg);
@@ -522,6 +523,18 @@ async function renderAttendanceTile(){
           'they enter their own roll+name to see their own attendance, marks, and submissions: ' +
           '<a href="student.html?course='+encodeURIComponent(CURRENT.courseId)+'" target="_blank">student.html?course='+CURRENT.courseId+'</a></p>';
   html += '<div id="attCards"></div>';
+
+  html += '<details class="seed-details" style="margin-top:18px;">';
+  html += '<summary>View Attendance</summary><div class="seed-body">';
+  html += '<div class="row-inline" style="align-items:flex-end;">' +
+          '<div><label class="field-label">Section</label><select id="evAttSection"><option value="">All sections</option>' + evalSectionOptions_() + '</select></div>' +
+          '<div><label class="field-label">From (optional)</label><input type="date" id="evAttFrom"></div>' +
+          '<div><label class="field-label">To (optional)</label><input type="date" id="evAttTo"></div>' +
+          '<div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="loadEvalAttendance()">Load</button></div>' +
+          '</div>';
+  html += '<p class="hint">Remedial/Extra sessions never enter Held/Attended/% — they only add to Bonus when a student shows up.</p>';
+  html += '<div id="evAttOut"></div></div></details>';
+
   html += '<h3 style="font-size:15px;margin-top:18px;">ERP export</h3>';
   html += '<button class="btn btn-ghost btn-sm" onclick="loadErpExport()">↻ Load export</button>';
   html += '<div id="erpExport"></div>';
@@ -1038,6 +1051,18 @@ async function renderQuizTile(){
       sitting for a quiz is done.
     </div>
     <div id="quizList"></div>
+    <details class="seed-details">
+      <summary>View Marks</summary>
+      <div class="seed-body">
+        <div class="row-inline" style="align-items:flex-end;">
+          <div><label class="field-label">Quiz *</label><select id="evMarksQuiz"><option value="">Loading…</option></select></div>
+          <div><label class="field-label">Below % (optional)</label><input type="number" id="evMarksBelow" min="0" max="100" placeholder="e.g. 40"></div>
+          <div style="flex:0 0 auto;"><button class="btn btn-primary btn-sm" onclick="loadEvalMarks()">Load</button></div>
+        </div>
+        <p class="hint">Sorted worst-first — the students most likely to need a follow-up are at the top.</p>
+        <div id="evMarksOut"></div>
+      </div>
+    </details>
     <details class="seed-details" id="seedPanel">
       <summary>Seed a new quiz</summary>
       <div class="seed-body">
@@ -1068,6 +1093,7 @@ async function renderQuizTile(){
     </details>
   </div>`;
   loadQuizzes();
+  loadEvalQuizList_();
 }
 async function loadQuizzes(){
   const j = await api('admin_list', {password:PIN});
