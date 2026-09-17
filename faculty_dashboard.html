@@ -10,34 +10,52 @@
 <style>
   :root{
     --maroon:#7a1f2b; --maroon-dark:#5c1620; --maroon-pale:#f3e3e2;
-    --amber:#a8620d; --amber-pale:#f3e8d4;
+    --amber:#a8620d; --amber-pale:#f3e8d4; --amber-text:#6b4405;
     --red:#b3261e; --red-pale:#f6dedb;
     --green:#2f6d3a; --green-pale:#e6f2e8;
     --ink:#2a211c; --slate:#6b5f55; --border:#e4d9c8; --border-strong:#cdbea3;
-    --parchment:#faf6ec; --card:#fffdf8; --radius:12px;
+    --parchment:#faf6ec; --card:#fffdf8; --panel:#f8f9fb; --radius:12px;
+    --nav-bg:rgba(250,246,236,.85);
     --shadow:0 1px 2px rgba(50,30,20,.06), 0 4px 14px rgba(50,30,20,.06);
+  }
+  html[data-theme="dark"]{
+    --maroon:#c0555f; --maroon-dark:#d47882; --maroon-pale:#33191d;
+    --amber:#d79a4b; --amber-pale:#3a2f1c; --amber-text:#f0d09f;
+    --red:#e5645c; --red-pale:#3a201d;
+    --green:#6bc27e; --green-pale:#1f3324;
+    --ink:#f0e8de; --slate:#b3a596; --border:#3a2f28; --border-strong:#54443a;
+    --parchment:#181310; --card:#221b17; --panel:#201914;
+    --nav-bg:rgba(24,19,16,.85);
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box;}
   body{ margin:0; padding-top:64px; background:var(--parchment); color:var(--ink);
-    font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.55; }
+    font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.55;
+    transition:background .15s ease, color .15s ease; }
   h1,h2,h3{font-family:'DM Serif Display',serif; font-weight:400; margin:0 0 .3em;}
   .screen{display:none;} .screen.active{display:block;}
   nav.nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center;
-    justify-content:space-between; padding:12px 20px; background:rgba(250,246,236,.85);
+    justify-content:space-between; padding:12px 20px; background:var(--nav-bg);
     backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
   .nav-brand{display:flex; align-items:center; gap:10px;}
-  .nav-logo{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--maroon);}
+  .nav-logo{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--maroon);
+    box-shadow:0 0 0 2px var(--card), 0 0 0 3px var(--maroon-pale);}
   .nav-name{font-weight:700; font-size:14px;}
   .nav-sub{font-family:'Inconsolata',monospace; font-size:10.5px; color:var(--slate); text-transform:uppercase; letter-spacing:.04em;}
+  .nav-right{display:flex; align-items:center; gap:12px;}
   .nav-cta{color:var(--maroon-dark); text-decoration:none; font-weight:600; font-size:12.5px;}
+  .theme-toggle{ width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border-strong);
+    background:var(--card); color:var(--ink); cursor:pointer; font-size:14px; display:flex;
+    align-items:center; justify-content:center; padding:0; line-height:1; }
+  .theme-toggle:hover{border-color:var(--maroon);}
 
   .wrap{max-width:820px; margin:0 auto; padding:26px 18px 60px;}
   .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px;}
   .card + .card{margin-top:14px;}
   .eyebrow{font-family:'Inconsolata',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--maroon-dark); margin-bottom:6px;}
-  input[type=password], input[type=text], input[type=number], input[type=file], select{
+  input[type=password], input[type=text], input[type=number], input[type=date], input[type=file], select, textarea{
     width:100%; padding:11px 13px; border:1.5px solid var(--border-strong); border-radius:9px;
-    font-family:'Inconsolata',monospace; font-size:14px; margin-bottom:10px; background:#fff;
+    font-family:'Inconsolata',monospace; font-size:14px; margin-bottom:10px; background:var(--card); color:var(--ink);
   }
   label.field-label{font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:6px;}
   .btn{font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; border:none; border-radius:9px; padding:11px 18px; cursor:pointer;}
@@ -47,7 +65,7 @@
   .btn-link{background:none;border:none;color:var(--maroon-dark);font-weight:600;cursor:pointer;padding:0;font-size:13px;text-decoration:underline;}
   .btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
   .banner{border-radius:9px; padding:11px 14px; font-size:13.5px; margin-bottom:14px;}
-  .banner.amber{background:var(--amber-pale); color:#6b4405;}
+  .banner.amber{background:var(--amber-pale); color:var(--amber-text);}
   .banner.red{background:var(--red-pale); color:var(--red);}
   .banner.green{background:var(--green-pale); color:var(--green);}
 
@@ -63,7 +81,7 @@
 
   .role-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:16px;}
   @media(max-width:640px){ .role-grid{grid-template-columns:1fr;} }
-  .role-card{ border:1.5px solid var(--border-strong); border-radius:12px; padding:20px; text-align:left; background:#fff; cursor:pointer; }
+  .role-card{ border:1.5px solid var(--border-strong); border-radius:12px; padding:20px; text-align:left; background:var(--card); cursor:pointer; }
   .role-card:hover{border-color:var(--maroon);}
   .role-card.disabled{ cursor:default; opacity:.55; }
   .role-card.disabled:hover{ border-color:var(--border-strong); }
@@ -73,18 +91,42 @@
 
   .course-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;}
   @media(max-width:520px){ .course-grid{grid-template-columns:1fr;} }
-  .course-card{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; text-align:left; background:#fff; cursor:pointer; transition:border-color .15s ease; }
+  .course-card{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; text-align:left; background:var(--card); cursor:pointer; transition:border-color .15s ease; }
   .course-card:hover{border-color:var(--maroon);}
   .course-card .cname{font-weight:700; font-size:15px;}
   .course-card .cmeta{font-family:'Inconsolata',monospace; font-size:11px; color:var(--slate); margin-top:4px;}
 
   .tile-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
   @media(max-width:520px){ .tile-grid{grid-template-columns:1fr;} }
-  .tile{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; background:#fff;
+  .tile{ border:1.5px solid var(--border-strong); border-radius:10px; padding:16px; background:var(--card);
     cursor:pointer; text-align:left; font-family:'DM Sans',sans-serif; }
   .tile.active{border-color:var(--maroon); background:var(--maroon-pale);}
   .tile .tname{font-weight:700; font-size:14.5px;}
   .tile .tdesc{font-size:12px; color:var(--slate); margin-top:3px;}
+
+  /* ---- Facilitator shell: left course rail + right menu (Sep 2026 redesign) ---- */
+  .fac-shell{display:flex; gap:20px; max-width:1080px; margin:0 auto; padding:26px 18px 60px; align-items:flex-start;}
+  .fac-sidebar{flex:0 0 230px; position:sticky; top:78px;}
+  .fac-main{flex:1 1 auto; min-width:0;}
+  @media(max-width:760px){
+    .fac-shell{flex-direction:column; padding:18px 14px 50px;}
+    .fac-sidebar{flex:0 0 auto; width:100%; position:static;}
+    #courseSideList{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch;}
+    .side-course{flex:0 0 auto; white-space:nowrap; margin-bottom:0 !important;}
+  }
+  .side-course{ display:block; width:100%; text-align:left; padding:10px 12px; border-radius:9px;
+    border:1.5px solid transparent; background:none; cursor:pointer; font-family:'DM Sans',sans-serif;
+    font-size:13.5px; margin-bottom:5px; color:var(--ink); }
+  .side-course:hover{background:var(--amber-pale);}
+  .side-course.active{background:var(--maroon-pale); border-color:var(--maroon); font-weight:700;}
+  .side-course .scname{display:block;}
+  .side-course .scmeta{display:block; font-family:'Inconsolata',monospace; font-size:10.5px; color:var(--slate); margin-top:2px; font-weight:400;}
+
+  .fac-menu{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;}
+  .fac-menu-btn{ font-family:'DM Sans',sans-serif; font-weight:700; font-size:13.5px; padding:9px 16px;
+    border-radius:20px; border:1.5px solid var(--border-strong); background:var(--card); color:var(--ink); cursor:pointer; }
+  .fac-menu-btn:hover{border-color:var(--maroon);}
+  .fac-menu-btn.active{background:var(--maroon); color:#fff; border-color:var(--maroon);}
 
   .row{ display:flex; align-items:center; justify-content:space-between; gap:12px;
     padding:14px 4px; border-bottom:1px dashed var(--border); flex-wrap:wrap; }
@@ -127,7 +169,10 @@
       <div class="nav-sub" id="navSub">ai_faculty · Faculty Dashboard</div>
     </div>
   </div>
-  <a class="nav-cta" href="https://kpsingh.in" target="_blank">kpsingh.in ↗</a>
+  <div class="nav-right">
+    <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark" aria-label="Toggle light/dark theme">🌙</button>
+    <a class="nav-cta" href="https://kpsingh.in" target="_blank">kpsingh.in ↗</a>
+  </div>
 </nav>
 
 <div class="wrap">
@@ -168,31 +213,6 @@
     </div>
   </div>
 
-  <!-- SCREEN 2: course picker -->
-  <div id="pickerScreen" class="screen">
-    <div class="card">
-      <button class="btn-link" onclick="backToRoles()">← Change role</button>
-      <div class="eyebrow" style="margin-top:10px;">Facilitator</div>
-      <h1 style="font-size:24px;">Pick a course</h1>
-      <p style="color:var(--slate); font-size:13.5px; margin-top:4px;">Attendance, lecture/lab material, quizzes, syllabus — all per course.</p>
-      <div class="course-grid" id="courseGrid">
-        <p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading courses…</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCREEN 3: course dashboard (5 tiles) -->
-  <div id="courseScreen" class="screen">
-    <div class="card">
-      <button class="btn-link" onclick="backToPicker()">← All courses</button>
-      <h1 id="courseTitle" style="font-size:22px; margin-top:10px;"></h1>
-      <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--slate);" id="courseMeta"></div>
-      <div class="tile-grid" id="tileGrid"></div>
-    </div>
-
-    <div id="tileBody"></div>
-  </div>
-
   <!-- SCREEN 4: Event Coordinator (SGIF — single shared backend, own password) -->
   <div id="eventUnlockScreen" class="screen">
     <div class="card">
@@ -226,6 +246,33 @@
 
 </div>
 
+<!-- SCREEN 2+3 merged: course rail (left) + course menu (right) — full width, lives outside .wrap -->
+<div id="facilitatorScreen" class="screen">
+  <div class="fac-shell">
+    <aside class="fac-sidebar">
+      <button class="btn-link" onclick="backToRoles()">← Change role</button>
+      <div class="eyebrow" style="margin-top:16px;">Your courses</div>
+      <div id="courseSideList">
+        <p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading…</p>
+      </div>
+    </aside>
+    <main class="fac-main">
+      <div id="facEmptyState" class="card">
+        <h1 style="font-size:22px;">Pick a course</h1>
+        <p style="color:var(--slate);font-size:13.5px;">Choose a course on the left to get started.</p>
+      </div>
+      <div id="facCourseArea" style="display:none;">
+        <div class="card">
+          <h1 id="courseTitle" style="font-size:22px;"></h1>
+          <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--slate);" id="courseMeta"></div>
+          <nav class="fac-menu" id="facMenu"></nav>
+        </div>
+        <div id="tileBody"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
 <script>
 /* ===================== SHARED ===================== */
 let COURSES = [], CURRENT = null, PIN = '';
@@ -240,13 +287,26 @@ function showScreen(id){
   window.scrollTo(0,0);
 }
 
+/* ===================== THEME TOGGLE =====================
+   In-memory only, on purpose — same "no browser storage" rule as the rest
+   of this platform's delivered pages (see attendance.html/student.html).
+   Resets to light on every fresh load; toggling never persists across
+   reloads or devices. */
+let THEME = 'light';
+function toggleTheme(){
+  THEME = THEME === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', THEME);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = THEME === 'dark' ? '☀️' : '🌙';
+}
+
 /* ===================== ROLE PICKER ===================== */
 function goToGate(){
   const saved = sessionStorage.getItem('facilitatorPin');
   if (saved){
     PIN = saved;
-    showScreen('pickerScreen');
-    loadCourses();
+    showScreen('facilitatorScreen');
+    loadCoursesSidebar();
     return;
   }
   document.getElementById('gatePin').value = '';
@@ -266,31 +326,36 @@ function checkGate(){
   if (!v){ return; }
   PIN = v;
   sessionStorage.setItem('facilitatorPin', PIN);
-  showScreen('pickerScreen');
-  loadCourses();
+  showScreen('facilitatorScreen');
+  loadCoursesSidebar();
 }
 
-/* ===================== FACILITATOR: COURSE PICKER ===================== */
-async function loadCourses(){
-  const grid = document.getElementById('courseGrid');
-  grid.innerHTML = '<p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading courses…</p>';
+/* ===================== FACILITATOR: COURSE RAIL (left) =====================
+   (Sep 2026 redesign) Replaces the old separate "pick a course" screen — every
+   course you teach is always one click away in the left rail, and picking one
+   drops you straight into its Attendance tab (the default landing view). */
+let CURRENT_INDEX = -1;
+async function loadCoursesSidebar(){
+  const list = document.getElementById('courseSideList');
+  list.innerHTML = '<p style="color:var(--slate);font-size:13px;"><span class="spinner"></span>Loading…</p>';
   try {
     const r = await fetch('courses.json');
     COURSES = await r.json();
   } catch(e) {
-    grid.innerHTML = '<div class="banner red">Could not load courses.json — check it exists alongside this page.</div>';
+    list.innerHTML = '<div class="banner red">Could not load courses.json — check it exists alongside this page.</div>';
     return;
   }
   if (!COURSES.length){
-    grid.innerHTML = '<p style="color:var(--slate);font-size:13px;">No courses registered yet — add one to courses.json.</p>';
+    list.innerHTML = '<p style="color:var(--slate);font-size:13px;">No courses registered yet — add one to courses.json.</p>';
     return;
   }
-  grid.innerHTML = COURSES.map((c, i) => `
-    <button class="course-card" onclick="selectCourse(${i})">
-      <div class="cname">${c.courseName}</div>
-      <div class="cmeta">${[c.branch, c.program, c.courseType].filter(Boolean).join(' · ')}</div>
+  list.innerHTML = COURSES.map((c, i) => `
+    <button class="side-course" id="sideCourse_${i}" onclick="selectCourseSidebar(${i})">
+      <span class="scname">${c.courseName}</span>
+      <span class="scmeta">${[c.branch, c.courseType].filter(Boolean).join(' · ')}</span>
     </button>
   `).join('');
+  if (CURRENT_INDEX === -1) selectCourseSidebar(0); // land straight on the first course, Attendance tab
 }
 
 // (Sep 2026) selectCourse() used to make a live admin_list call to verify
@@ -304,13 +369,19 @@ async function loadCourses(){
 // naturally the moment any password-gated action actually runs (ERR-401 —
 // see maybeShowPasswordPrompt(), wired into api() below), which is rare in
 // practice and no slower than before, just no longer paid on every click.
-function selectCourse(i){
+function selectCourseSidebar(i){
   CURRENT = COURSES[i];
-  showScreen('courseScreen');
+  CURRENT_INDEX = i;
+  document.querySelectorAll('.side-course').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById('sideCourse_'+i);
+  if (btn) btn.classList.add('active');
+  document.getElementById('facEmptyState').style.display = 'none';
+  document.getElementById('facCourseArea').style.display = 'block';
   document.getElementById('courseTitle').textContent = CURRENT.courseName;
   document.getElementById('courseMeta').textContent = [CURRENT.branch, CURRENT.program, CURRENT.sections ? ('sections: '+CURRENT.sections) : ''].filter(Boolean).join(' · ');
   document.getElementById('tileBody').innerHTML = '';
-  renderTiles();
+  renderFacMenu();
+  openTile('attendance'); // Attendance is the default landing tab for every course
 }
 
 // Shown inline, on top of whatever tile is open, the first time a
@@ -342,35 +413,27 @@ async function retryCoursePassword(){
     if (!j.success){ statusEl.innerHTML = '<div class="banner red">Wrong password.</div>'; return; }
     PIN = pw; // use this course's password for the rest of this session
     document.getElementById('pwMismatchBanner').remove();
-    if (ACTIVE_TILE) openTile(ACTIVE_TILE); else renderTiles();
+    if (ACTIVE_TILE) openTile(ACTIVE_TILE);
   } catch(e) {
     statusEl.innerHTML = '<div class="banner red">Could not reach this course\'s backend.</div>';
   }
 }
 
-function backToPicker(){
-  CURRENT = null;
-  document.getElementById('tileBody').innerHTML = '';
-  showScreen('pickerScreen');
-}
-
-/* ===================== TILES ===================== */
-function renderTiles(){
-  const tiles = [
-    {id:'attendance', name:'Attendance', desc:'Open/close per section · ERP export'},
-    CURRENT.courseType === 'Practical'
-      ? {id:'lab', name:'Lab Creation', desc:'Manuals, guides, scripts'}
-      : {id:'lecture', name:'Lecture Creation', desc:'Notes, presenter scripts'},
-    {id:'quiz', name:'Quiz & Assessment', desc:'Open/close · review release'},
-    {id:'od', name:'OD Requests', desc:'Review & approve Official Duty'},
-    {id:'syllabus', name:'Upload Syllabus', desc:'Course syllabus file'},
-    {id:'evaluation', name:'Evaluation & Reports', desc:'Attendance %, marks, submissions'},
-    {id:'sheet', name:'Marks & Attendance Sheet', desc:'Open the Google Sheet ↗'},
+/* ===================== FACILITATOR MENU (right side, 4 items) =====================
+   (Sep 2026 redesign) Deliberately just Attendance / Quiz & Assessment / OD
+   Requests / Logs — everything else (Lecture/Lab Creation, Upload Syllabus,
+   Evaluation & Reports incl. View Attendance/View Marks) is parked off this
+   menu for now, not deleted: renderContentTile()/renderEvaluationTile() below
+   are untouched, so any of them is one menu-item line away from coming back. */
+function renderFacMenu(){
+  const items = [
+    {id:'attendance', name:'📋 Attendance'},
+    {id:'quiz', name:'📝 Quiz &amp; Assessment'},
+    {id:'od', name:'🎓 OD Requests'},
+    {id:'logs', name:'📊 Logs'},
   ];
-  document.getElementById('tileGrid').innerHTML = tiles.map(t =>
-    `<button class="tile" id="tile_${t.id}" onclick="openTile('${t.id}')">
-       <div class="tname">${t.name}</div><div class="tdesc">${t.desc}</div>
-     </button>`
+  document.getElementById('facMenu').innerHTML = items.map(t =>
+    `<button class="fac-menu-btn" id="facBtn_${t.id}" onclick="openTile('${t.id}')">${t.name}</button>`
   ).join('');
 }
 
@@ -418,11 +481,12 @@ async function api(action, params, method, body){
 
 let ACTIVE_TILE = null;
 function openTile(id){
-  // 'sheet' is a plain external-link shortcut, not an in-app panel — it
-  // opens the course's own Google Sheet (marks/attendance data live there,
-  // same Sheet the backend writes to) in a new tab and leaves whichever
-  // tile was already active untouched, rather than switching tileBody.
-  if (id === 'sheet'){
+  // 'logs' (was 'sheet') is a plain external-link shortcut, not an in-app
+  // panel — it opens the course's own Google Sheet (marks/attendance data
+  // live there, same Sheet the backend writes to) in a new tab and leaves
+  // whichever menu item was already active untouched, rather than switching
+  // tileBody.
+  if (id === 'logs'){
     if (!CURRENT.sheetUrl || /^PASTE_/.test(CURRENT.sheetUrl)){
       alert('No Sheet link set for this course yet — add one to courses.json (sheetUrl field).');
       return;
@@ -431,8 +495,9 @@ function openTile(id){
     return;
   }
   ACTIVE_TILE = id;
-  document.querySelectorAll('.tile').forEach(el => el.classList.remove('active'));
-  document.getElementById('tile_'+id).classList.add('active');
+  document.querySelectorAll('.fac-menu-btn').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById('facBtn_'+id);
+  if (btn) btn.classList.add('active');
   const body = document.getElementById('tileBody');
   body.innerHTML = '<div class="card"><span class="spinner"></span>Loading…</div>';
   if (id === 'attendance') renderAttendanceTile();
@@ -485,17 +550,16 @@ async function renderAttendanceTile(){
       </div>
       <div class="row-actions">
         <button class="pill-btn btn-closed" id="attBtn_${s}" onclick="toggleAttendance('${s}')">…</button>
-        <a class="btn-ghost btn btn-sm" href="attendance.html?course=${encodeURIComponent(CURRENT.courseId)}&section=${encodeURIComponent(s)}" target="_blank">Open marking page ↗</a>
+        <a class="btn-ghost btn btn-sm" href="attendance.html?course=${encodeURIComponent(CURRENT.courseId)}&section=${encodeURIComponent(s)}" target="_blank">Student's Attendance / OD Link ↗</a>
       </div>
     </div>
-    <div class="card" id="attOpenForm_${s}" style="display:none;margin:-4px 0 12px;padding:12px 14px;background:#f8f9fb;border-radius:8px;">
+    <div class="card" id="attOpenForm_${s}" style="display:none;margin:-4px 0 12px;padding:12px 14px;background:var(--panel);border-radius:8px;">
       <div class="row-inline">
         <div>
           <label class="field-label">Session type *</label>
           <select id="attOpenType_${s}">
             <option value="" disabled selected>Select type…</option>
             <option value="Scheduled">Scheduled</option>
-            <option value="Short">Short</option>
             <option value="Remedial">Remedial</option>
             <option value="Extra">Extra</option>
           </select>
@@ -509,8 +573,8 @@ async function renderAttendanceTile(){
           <button class="btn btn-ghost btn-sm" id="attOpenCancelBtn_${s}" onclick="cancelOpenAttendance('${s}')">Cancel</button>
         </div>
       </div>
-      <div class="hint" style="color:#c0392b;" id="attOpenErr_${s}"></div>
-      <p class="hint">Scheduled and Short count normally toward attendance %. Remedial and Extra are bonus-only — attending helps, missing is never held against a student.</p>
+      <div class="hint" style="color:var(--red);" id="attOpenErr_${s}"></div>
+      <p class="hint">Scheduled counts normally toward attendance %. Remedial and Extra are bonus-only — attending helps, missing is never held against a student.</p>
     </div>
   `).join('');
 
